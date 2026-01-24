@@ -1,84 +1,547 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
   <meta charset="UTF-8">
   <title>V2RAY Converter (Vmess Vless Trojan Shadowsocks Wireguard Hysteria2) Тестовый</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    * { font-weight: bold !important; }
-    body { background: #121212; color: #eee; font-family: monospace; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
-    h2 { text-align: center; margin: 10px 0 20px; font-size: 1.2em; }
-    .container { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
-    .label { color: #bbb; font-size: 0.9em; margin-bottom: 4px; user-select: none; }
-    textarea { width: 100%; height: 150px; background: #1e1e1e; color: #eee; padding: 10px; border-radius: 5px; resize: vertical; box-sizing: border-box; font-size: 14px; line-height: 1.3em; border: 3px solid; font-family: monospace; }
-    #inputConfig { border-color: #28a745; }
-    #outputResult { border-color: #dc3545; }
-    .buttons-row { display: flex; width: 100%; gap: 10px; margin-top: 5px; }
-    .buttons-left, .buttons-right { display: flex; flex-direction: column; gap: 10px; width: 50%; }
-    .clear-row { margin-top: 10px; width: 100%; display: flex; gap: 10px; }
-    .clear-row button { flex: 1; color: #fff; padding: 10px 15px; border: none; cursor: pointer; border-radius: 5px; font-size: 12px; user-select: none; white-space: nowrap; transition: filter .2s ease; text-align: center; background: #dc3545; }
-    #btnClearInput { border: 5px solid #28a745; }
-    #btnClearOutput { border: none; }
-    button { color: #fff; padding: 10px 15px; border: none; cursor: pointer; border-radius: 5px; font-size: 14px; user-select: none; white-space: nowrap; transition: filter .2s ease; text-align: center; }
-    #btnConvert { background: #28a745; }
-    #btnConvertBack { background: #007bff; }
-    #btnTextBase64 { background: #ff9800; }
-    #btnCopy, #btnDownload { background: #000; border: 2px solid #999; }
-    #btnLoadFile { background: #6c757d; }
-    button:hover { filter: brightness(1.2); }
-    #fileInput { display: none; }
+    * {
+      font-weight: bold !important;
+    }
+
+    body {
+      background: #121212;
+      color: #eee;
+      font-family: monospace;
+      margin: 0;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      text-align: center;
+      margin: 10px 0 20px;
+      font-size: 1.2em;
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .label {
+      color: #bbb;
+      font-size: 0.9em;
+      margin-bottom: 4px;
+      user-select: none;
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      background: #1e1e1e;
+      color: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      resize: vertical;
+      box-sizing: border-box;
+      font-size: 14px;
+      line-height: 1.3em;
+      border: 3px solid;
+      font-family: monospace;
+    }
+
+    #inputConfig {
+      border-color: #28a745;
+    }
+
+    #outputResult {
+      border-color: #dc3545;
+    }
+
+    .buttons-row {
+      display: flex;
+      width: 100%;
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .buttons-left,
+    .buttons-right {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 50%;
+    }
+
+    .clear-row {
+      margin-top: 10px;
+      width: 100%;
+      display: flex;
+      gap: 10px;
+    }
+
+    .clear-row button {
+      flex: 1;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 12px;
+      user-select: none;
+      white-space: nowrap;
+      transition: filter .2s ease;
+      text-align: center;
+      background: #dc3545;
+    }
+
+    #btnClearInput {
+      border: 5px solid #28a745;
+    }
+
+    #btnClearOutput {
+      border: none;
+    }
+
+    button {
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+      user-select: none;
+      white-space: nowrap;
+      transition: filter .2s ease;
+      text-align: center;
+    }
+
+    #btnConvert {
+      background: #28a745;
+    }
+
+    #btnConvertBack {
+      background: #007bff;
+    }
+
+    #btnTextBase64 {
+      background: #ff9800;
+    }
+
+    #btnCopy,
+    #btnDownload {
+      background: #000;
+      border: 2px solid #999;
+    }
+
+    #btnLoadFile {
+      background: #6c757d;
+    }
+
+    button:hover {
+      filter: brightness(1.2);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
     /* GeoIP и фильтр */
-    #filterRow { display: flex; flex-direction: column; gap: 5px; margin-bottom: 2px; position: relative; }
-    #geoRow { display: flex; align-items: center; gap: 8px; }
-    #ipGeoToggle { width: 20px; height: 20px; cursor: pointer; }
-    #ipGeoLabel { font-size: 0.9em; margin-left: -7px; color: #bbb; user-select: none; }
-    #geoServiceInput { flex: 1; height: 36px; max-width: 190px; padding: 0 10px; font-size: 14px; border: 3px solid #007bff; border-radius: 5px; background: #1e1e1e; color: #eee; box-sizing: border-box; }
-    #statusContainer { display: flex; flex-direction: column; align-items: flex-start; color: #00ffee; font-size: 0.9em; }
-    .spinner { width: 16px; height: 16px; margin-bottom: 2px; border: 2px solid #0af33; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #controlsRow { display: flex; gap: 7px; align-items: center; }
-    #btnCountry { width: 36px; height: 36px; background: #007bff; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-  #btnPing { width: 36px; height: 36px; background: #333; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid #888; }
-    #filterInput { flex: 1; height: 36px; padding: 0 10px; font-size: 14px; border: 3px solid #007bff; border-radius: 5px; background: #1e1e1e; color: #eee; box-sizing: border-box; max-width: calc(100% - 160px); }
-    #btnSettings { width: 36px; height: 36px; background: #333; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid #888; }
-    #btnFilter { background: #007bff; color: #fff; border: none; border-radius: 5px; padding: 0 15px; font-size: 14px; cursor: pointer; height: 36px; }
-    #countryPopup { position: absolute; top: 96px; left: 10px; width: 59vw; max-width: calc(100% - 20px); height: calc(100vh - 210px); background: #1e1e1e; border: 3px solid #007bff; border-radius: 5px; overflow: hidden; display: none; box-sizing: border-box; z-index:100; }
-    #countryPopup .search-container { position: sticky; top: 0; background: #1e1e1e; padding: 10px; z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    #countryPopup .search-container input { width: calc(100% - 20px); padding: 6px 10px; font-size: 14px; border: 2px solid #007bff; border-radius: 4px; background: #2a2a2a; color: #eee; box-sizing: border-box; }
-    #countryPopup .country-list { height: calc(100% - 56px); overflow-y: auto; }
-    #countryPopup .country-item { display: flex; align-items: center; padding: 6px 10px; cursor: pointer; }
-    #countryPopup .country-item:hover { background: #007bff22; }
-    #countryPopup .country-item span { margin-left: 5px; }
-    #countryPopup .country-item span:first-child { font-family: "Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif; }
+    #filterRow {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 2px;
+      position: relative;
+    }
+
+    #geoRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #ipGeoToggle {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    #ipGeoLabel {
+      font-size: 0.9em;
+      margin-left: -7px;
+      color: #bbb;
+      user-select: none;
+    }
+
+    #geoServiceInput {
+      flex: 1;
+      height: 36px;
+      max-width: 190px;
+      padding: 0 10px;
+      font-size: 14px;
+      border: 3px solid #007bff;
+      border-radius: 5px;
+      background: #1e1e1e;
+      color: #eee;
+      box-sizing: border-box;
+    }
+
+    #statusContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      color: #00ffee;
+      font-size: 0.9em;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      margin-bottom: 2px;
+      border: 2px solid #0af33;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #controlsRow {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    #btnCountry {
+      width: 36px;
+      height: 36px;
+      background: #007bff;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    #btnPing {
+      width: 36px;
+      height: 36px;
+      background: #333;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      border: 2px solid #888;
+    }
+
+    #filterInput {
+      flex: 1;
+      height: 36px;
+      padding: 0 10px;
+      font-size: 14px;
+      border: 3px solid #007bff;
+      border-radius: 5px;
+      background: #1e1e1e;
+      color: #eee;
+      box-sizing: border-box;
+      max-width: calc(100% - 160px);
+    }
+
+    #btnSettings {
+      width: 36px;
+      height: 36px;
+      background: #333;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      border: 2px solid #888;
+    }
+
+    #btnFilter {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 0 15px;
+      font-size: 14px;
+      cursor: pointer;
+      height: 36px;
+    }
+
+    #countryPopup {
+      position: absolute;
+      top: 96px;
+      left: 10px;
+      width: 59vw;
+      max-width: calc(100% - 20px);
+      height: calc(100vh - 210px);
+      background: #1e1e1e;
+      border: 3px solid #007bff;
+      border-radius: 5px;
+      overflow: hidden;
+      display: none;
+      box-sizing: border-box;
+      z-index: 100;
+    }
+
+    #countryPopup .search-container {
+      position: sticky;
+      top: 0;
+      background: #1e1e1e;
+      padding: 10px;
+      z-index: 1;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    #countryPopup .search-container input {
+      width: calc(100% - 20px);
+      padding: 6px 10px;
+      font-size: 14px;
+      border: 2px solid #007bff;
+      border-radius: 4px;
+      background: #2a2a2a;
+      color: #eee;
+      box-sizing: border-box;
+    }
+
+    #countryPopup .country-list {
+      height: calc(100% - 56px);
+      overflow-y: auto;
+    }
+
+    #countryPopup .country-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    #countryPopup .country-item:hover {
+      background: #007bff22;
+    }
+
+    #countryPopup .country-item span {
+      margin-left: 5px;
+    }
+
+    #countryPopup .country-item span:first-child {
+      font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    }
+
     /* Модалка настроек */
-    #settingsModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 200; }
-    #settingsContent { background: #1e1e1e; width: 80vw; max-width: 600px; padding: 20px; border: 3px solid #007bff; border-radius: 5px; position: relative; box-sizing: border-box; padding-bottom: 90px; }
-    #settingsContent h3 { margin-top: 0; font-size: 1em; color: #bbb; }
-    .settings-row { display: flex; align-items: center; margin-bottom: 15px; gap: 10px; }
-    .settings-row input { flex: 1; height: 36px; padding: 0 10px; font-size: 14px; border: 3px solid #28a745; border-radius: 5px; background: #1e1e1e; color: #eee; box-sizing: border-box; }
-    .settings-row button { height: 36px; padding: 0 15px; background: #8b0000; border: 2px solid #fff; font-size: 14px; cursor: pointer; }
-        #ipWsToggle { position: absolute; left: 20px; bottom: 20px; background: #004b28; border: 2px solid #828282; border-radius: 5px; padding: 5px 10px; font-size: 12px; line-height: 1.2; white-space: normal; display: inline-flex; align-items: center; justify-content: center; height: 36px; }
-    #btnDedup { position: absolute; left: 120px; bottom: 20px; background: #004b28; border: 2px solid #828282; border-radius: 5px; padding: 5px 10px; font-size: 12px; line-height: 1.2; white-space: normal; display: inline-flex; align-items: center; justify-content: center; height: 36px; }
-    #closeSettings { position: absolute; right: 20px; bottom: 20px; background: #8b0000; color: #fff; border: none; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+    #settingsModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    #settingsContent {
+      background: #1e1e1e;
+      width: 80vw;
+      max-width: 600px;
+      padding: 20px;
+      border: 3px solid #007bff;
+      border-radius: 5px;
+      position: relative;
+      box-sizing: border-box;
+      padding-bottom: 90px;
+    }
+
+    #settingsContent h3 {
+      margin-top: 0;
+      font-size: 1em;
+      color: #bbb;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px;
+    }
+
+    .settings-row input {
+      flex: 1;
+      height: 36px;
+      padding: 0 10px;
+      font-size: 14px;
+      border: 3px solid #28a745;
+      border-radius: 5px;
+      background: #1e1e1e;
+      color: #eee;
+      box-sizing: border-box;
+    }
+
+    .settings-row button {
+      height: 36px;
+      padding: 0 15px;
+      background: #8b0000;
+      border: 2px solid #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* стиль: ip→ws-host и ip→sni одинаковые */
+    #ipWsToggle,
+    #ipSniToggle {
+      position: absolute;
+      bottom: -20px;
+      background: #004b28;
+      border: 2px solid #828282;
+      border-radius: 5px;
+      padding: 5px 10px;
+      font-size: 12px;
+      line-height: 1.2;
+      white-space: normal;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* конкретные позиции чтобы кнопки не накладывались */
+    #ipWsToggle {
+      left: 120px;
+    }
+
+    #ipSniToggle {
+      left: 260px;
+    }
+
+    /* адаптив */
     @media (max-width:480px) {
-      textarea { height: 130px; font-size:13px; }
-      .buttons-left button, .buttons-right button, #btnFilter, #btnCountry, #btnPing, #btnSettings, #btnDedup, #ipWsToggle { font-size:13px; padding:8px 12px; }
-      #filterInput, #geoServiceInput { font-size:13px; height:32px; }
-      #btnCountry, #btnPing, #btnSettings { width:32px; height:32px; }
-      #settingsContent { width: 90vw; }
+
+      #ipWsToggle,
+      #ipSniToggle {
+        font-size: 13px;
+        padding: 8px 12px;
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+      }
+
+      #ipWsToggle {
+        left: 100px;
+        width: 70px;
+        height: 36px;
+        font-size: 12px;
+      }
+
+      #ipSniToggle {
+        left: 190px;
+        width: 70px;
+        height: 36px;
+        font-size: 12px;
+      }
+    }
+
+    #btnDedup {
+      position: absolute;
+      left: 1px;
+      bottom: -20px;
+      background: #004b28;
+      border: 2px solid #828282;
+      border-radius: 5px;
+      padding: 5px 10px;
+      font-size: 12px;
+      line-height: 1.2;
+      white-space: normal;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+    }
+
+    #closeSettings {
+      position: absolute;
+      right: -5px;
+      bottom: -75px;
+      background: #8b0000;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    @media (max-width:480px) {
+      textarea {
+        height: 130px;
+        font-size: 13px;
+      }
+
+      .buttons-left button,
+      .buttons-right button,
+      #btnFilter,
+      #btnCountry,
+      #btnPing,
+      #btnSettings,
+      #btnDedup,
+      #ipWsToggle {
+        font-size: 13px;
+        padding: 8px 12px;
+      }
+
+      #filterInput,
+      #geoServiceInput {
+        font-size: 13px;
+        height: 32px;
+      }
+
+      #btnCountry,
+      #btnPing,
+      #btnSettings {
+        width: 32px;
+        height: 32px;
+      }
+
+      #settingsContent {
+        width: 90vw;
+      }
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
 </head>
+
 <body>
   <h1 style="font-size: 15px; text-align: center; margin-top: -8px">V2RAY Converter</h1>
-  <h1 style="font-size: 11px; text-align: center; margin-bottom:10px; margin-top:-3px;">(Vmess Vless Trojan Shadowsocks Wireguard Hysteria)</h1>
+  <h1 style="font-size: 11px; text-align: center; margin-bottom:10px; margin-top:-3px;">(Vmess Vless Trojan Shadowsocks
+    Wireguard Hysteria)</h1>
   <div id="filterRow">
     <div id="geoRow">
       <input type="checkbox" id="ipGeoToggle">
       <label for="ipGeoToggle" id="ipGeoLabel">GeoIP</label>
-      <input id="geoServiceInput" type="text" placeholder="https://ipwhois.app/json/{ip}" value="https://ipwhois.app/json/{ip}">
-      <div id="statusContainer"><div class="spinner" id="spinner"></div><span id="processStatus"></span></div>
+      <input id="geoServiceInput" type="text" placeholder="https://ipwhois.app/json/{ip}"
+        value="https://ipwhois.app/json/{ip}">
+      <div id="statusContainer">
+        <div class="spinner" id="spinner"></div><span id="processStatus"></span>
+      </div>
     </div>
     <div class="label">
       <span>Страны</span><span style="margin-left:45px;">Фильтр поиска / URL-Sub</span>
@@ -121,6 +584,8 @@
   <input type="file" id="fileInput" accept=".txt,.json,.yaml,.yml">
   <a id="hiddenDownloadLink" style="display:none;"></a>
 
+
+  <!-- Заменить старую секцию settingsModal на эту -->
   <div id="settingsModal">
     <div id="settingsContent">
       <h3>Замена/добавление Ws-Host</h3>
@@ -134,1468 +599,1711 @@
         <button id="btnReplaceSni">ОК</button>
       </div>
       <h3>Замена/добавление названия</h3>
-      <div class="settings-row">
-        <input type="text" id="replaceNameInput" placeholder="Новое название">
+      <div class="settings-row" style="align-items:center; gap:8px;">
+        <input type="text" id="replaceNameInput" placeholder="Новое название (сохранит любые символы и пробелы)">
         <button id="btnReplaceName">ОК</button>
       </div>
-      <button id="ipWsToggle">ip→to<br>ws-host</button>
-      <button id="btnDedup">дедупл<br>икация</button>
-      <button id="closeSettings">Закрыть</button>
+
+      <!-- Новая строка с переключателями -->
+      <div class="settings-row" style="gap:12px; align-items:center; font-size:0.95em;">
+        <label style="display:inline-flex; align-items:center; gap:6px; user-select:none;">
+          <input type="checkbox" id="prependName" /> <span>дописать в начало</span>
+        </label>
+        <label style="display:inline-flex; align-items:center; gap:6px; user-select:none;">
+          <input type="checkbox" id="appendName" /> <span>дописать в конец</span>
+        </label>
+        <span style="color:#bbb; margin-left:8px; font-size:0.85em;">(если оба — добавит в начало и в конец)</span>
+      </div>
+
+
+      <!-- Контейнер кнопок в модалке настроек (поставь вместо текущих кнопок ipWsToggle / ipSniToggle) -->
+      <div style="position:relative; padding-bottom:50px;">
+        <button id="ipWsToggle">ip→to host</button>
+        <button id="ipSniToggle">ip→to sni</button>
+        <button id="btnDedup">дедупл<br>икация</button>
+        <button id="closeSettings">Закрыть</button>
+      </div>
     </div>
-  </div>
 
-  <script>
-     
-   const countries = [
-  { flag: '🌎', name: 'ОТКЛ' },
-  { flag: '🇦🇫', name: 'Afghanistan' },
-  { flag: '🇿🇦', name: 'Africa South' },
-  { flag: '🇦🇽', name: 'Aland island' },
-  { flag: '🇦🇱', name: 'Albania' },
-  { flag: '🇩🇿', name: 'Algeria' },
-  { flag: '🇦🇸', name: 'American samoa' },
-  { flag: '🇦🇩', name: 'Andorra' },
-  { flag: '🇦🇴', name: 'Angola' },
-  { flag: '🇦🇮', name: 'Anguilla' },
-  { flag: '🇦🇬', name: 'Antigua and barbuda' },
-  { flag: '🇦🇶', name: 'Antarctica' },
-  { flag: '🇦🇷', name: 'Argentina' },
-  { flag: '🇦🇲', name: 'Armenia' },
-  { flag: '🇦🇼', name: 'Aruba' },
-  { flag: '🇦🇨', name: 'Ascension island' },
-  { flag: '🇦🇺', name: 'Australia' },
-  { flag: '🇦🇹', name: 'Austria' },
-  { flag: '🇦🇿', name: 'Azerbaijan' },
-  { flag: '🇧🇸', name: 'Bahamas' },
-  { flag: '🇧🇭', name: 'Bahrain' },
-  { flag: '🇧🇩', name: 'Bangladesh' },
-  { flag: '🇧🇧', name: 'Barbados' },
-  { flag: '🇧🇾', name: 'Belarus' },
-  { flag: '🇧🇪', name: 'Belgium' },
-  { flag: '🇧🇿', name: 'Belize' },
-  { flag: '🇧🇯', name: 'Benin' },
-  { flag: '🇧🇲', name: 'Bermuda' },
-  { flag: '🇧🇹', name: 'Bhutan' },
-  { flag: '🇧🇴', name: 'Bolivia (plurinational state of)' },
-  { flag: '🇧🇦', name: 'Bosnia and herzegovina' },
-  { flag: '🇧🇻', name: 'Bouvet island' },
-  { flag: '🇧🇼', name: 'Botswana' },
-  { flag: '🇧🇷', name: 'Brazil' },
-  { flag: '🇮🇴', name: 'British indian ocean territory' },
-  { flag: '🇧🇳', name: 'Brunei darussalam' },
-  { flag: '🇧🇬', name: 'Bulgaria' },
-  { flag: '🇧🇫', name: 'Burkina faso' },
-  { flag: '🇧🇮', name: 'Burundi' },
-  { flag: '🇳🇨', name: 'Caledonia new' },
-  { flag: '🇰🇭', name: 'Cambodia' },
-  { flag: '🇨🇲', name: 'Cameroon' },
-  { flag: '🇨🇦', name: 'Canada' },
-  { flag: '🇮🇨', name: 'Canary islands' },
-  { flag: '🇨🇻', name: 'Cape verde' },
- { flag: '🇧🇶', name: 'Caribbean Netherlands (Bonaire, Sint Eustatius & Saba)' },
-  { flag: '🇨🇫', name: 'Central african republic' },
-  { flag: '🇹🇩', name: 'Chad' },
-  { flag: '🇨🇱', name: 'Chile' },
-  { flag: '🇨🇳', name: 'China' },
-  { flag: '🇨🇽', name: 'Christmas island' },
-  { flag: '🇨🇵', name: 'Clipperton island' },
-  { flag: '🇨🇨', name: 'Cocos (keeling) islands' },
-  { flag: '🇨🇴', name: 'Colombia' },
-  { flag: '🇰🇲', name: 'Comoros' },
-  { flag: '🇨🇬', name: 'Congo' },
-  { flag: '🇨🇩', name: 'Congo, the democratic republic of the' },
-  { flag: '🇨🇰', name: 'Cook islands' },
-  { flag: '🇨🇷', name: 'Costa rica' },
-  { flag: '🇨🇮', name: 'Cote d`ivoire' },
-  { flag: '🇭🇷', name: 'Croatia' },
-  { flag: '🇨🇺', name: 'Cuba' },
-  { flag: '🇨🇼', name: 'Curaçao' },
-  { flag: '🇨🇾', name: 'Cyprus' },
-  { flag: '🇨🇿', name: 'Czechia' },
-  { flag: '🇩🇰', name: 'Denmark' },
-  { flag: '🇩🇬', name: 'Diego garcia' },
-  { flag: '🇩🇯', name: 'Djibouti' },
-  { flag: '🇩🇲', name: 'Dominica' },
-  { flag: '🇩🇴', name: 'Dominican republic' },
-  { flag: '🇪🇨', name: 'Ecuador' },
-  { flag: '🇪🇪', name: 'Estonia' },
-  { flag: '🇪🇬', name: 'Egypt' },
-  { flag: '🇸🇻', name: 'El salvador' },
-  { flag: '🇬🇶', name: 'Equatorial guinea' },
-  { flag: '🇪🇷', name: 'Eritrea' },
-  { flag: '🇪🇹', name: 'Ethiopia' },
-  { flag: '🇪🇺', name: 'European union' },
-  { flag: '🇫🇰', name: 'Falkland islands (malvinas)' },
-  { flag: '🇫🇴', name: 'Faroe islands' },
-  { flag: '🇫🇯', name: 'Fiji' },
-  { flag: '🇫🇮', name: 'Finland' },
-  { flag: '🇫🇷', name: 'France' },
-  { flag: '🇬🇫', name: 'French guiana' },
-  { flag: '🇵🇫', name: 'French polynesia' },
-  { flag: '🇹🇫', name: 'French southern territories' },
-  { flag: '🇬🇦', name: 'Gabon' },
-  { flag: '🇬🇲', name: 'Gambia' },
-  { flag: '🇬🇪', name: 'Georgia' },
-  { flag: '🇬🇸', name: 'Georgia South, and south sandwich islands' },
-  { flag: '🇩🇪', name: 'Germany' },
-  { flag: '🇬🇭', name: 'Ghana' },
-  { flag: '🇬🇮', name: 'Gibraltar' },
-  { flag: '🇬🇷', name: 'Greece' },
-  { flag: '🇬🇱', name: 'Greenland' },
-  { flag: '🇬🇩', name: 'Grenada' },
-  { flag: '🇬🇵', name: 'Guadeloupe' },
-  { flag: '🇬🇺', name: 'Guam' },
-  { flag: '🇬🇼', name: 'Guinea-bissau' },
-  { flag: '🇬🇳', name: 'Guinea' },
-  { flag: '🇬🇾', name: 'Guyana' },
-  { flag: '🇭🇹', name: 'Haiti' },
- { flag: '🇭🇲', name: 'Heard island and mcdonald islands' },
-  { flag: '🇭🇰', name: 'Hong kong' },
-   { flag: '🇭🇳', name: 'Honduras' },
-  { flag: '🇭🇺', name: 'Hungary' },
-  { flag: '🇮🇸', name: 'Iceland' },
-  { flag: '🇮🇳', name: 'India' },
-  { flag: '🇮🇩', name: 'Indonesia' },
-  { flag: '🇮🇪', name: 'Ireland' },
-  { flag: '🇮🇱', name: 'Israel' },
-  { flag: '🇮🇲', name: 'Isle of man' },
-  { flag: '🇮🇶', name: 'Iraq' },
-  { flag: '🇮🇷', name: 'Iran (islamic republic of)' },
-  { flag: '🇮🇹', name: 'Italy' },
-  { flag: '🇯🇪', name: 'Jersey' },
-  { flag: '🇯🇲', name: 'Jamaica' },
-  { flag: '🇯🇴', name: 'Jordan' },
-  { flag: '🇯🇵', name: 'Japan' },
-  { flag: '🇰🇪', name: 'Kenya' },
-  { flag: '🇰🇮', name: 'Kiribati' },
-{ flag: '🇰🇷', name: 'Korea South' },
-  { flag: '🇰🇵', name: 'Korea North' },
-  { flag: '🇽🇰', name: 'Kosovo' },
-  { flag: '🇰🇼', name: 'Kuwait' },
-  { flag: '🇰🇿', name: 'Kazakhstan' },
-  { flag: '🇱🇦', name: 'Lao people’s democratic republic' },
-  { flag: '🇱🇻', name: 'Latvia' },
-  { flag: '🇱🇧', name: 'Lebanon' },
- { flag: '🇱🇸', name: 'Lesotho' },
-  { flag: '🇱🇷', name: 'Liberia' }, 
-  { flag: '🇱🇾', name: 'Libya' },
-  { flag: '🇱🇮', name: 'Liechtenstein' },
-  { flag: '🇱🇹', name: 'Lithuania' },
-  { flag: '🇱🇺', name: 'Luxembourg' },
-  { flag: '🇲🇴', name: 'Macao, region of china' },
- { flag: '🇲🇰', name: 'Macedonia North' },
-  { flag: '🇲🇬', name: 'Madagascar' },
-  { flag: '🇲🇾', name: 'Malaysia' },
-  { flag: '🇲🇱', name: 'Mali' },
-  { flag: '🇲🇹', name: 'Malta' },
-  { flag: '🇲🇻', name: 'Maldives' },
-  { flag: '🇲🇼', name: 'Malawi' },
-  { flag: '🇲🇭', name: 'Marshall islands' },
-  { flag: '🇲🇶', name: 'Martinique' },
- { flag: '🇲🇷', name: 'Mauritania' },
-  { flag: '🇲🇺', name: 'Mauritius' },
-  { flag: '🇾🇹', name: 'Mayotte' },
- { flag: '🇲🇽', name: 'Mexico' },
- { flag: '🇲🇩', name: 'Moldova, republic of' }, 
-  { flag: '🇲🇨', name: 'Monaco' },
-  { flag: '🇲🇳', name: 'Mongolia' },
-  { flag: '🇲🇪', name: 'Montenegro' },
-  { flag: '🇲🇸', name: 'Montserrat' },
-  { flag: '🇲🇦', name: 'Morocco' },
-  { flag: '🇲🇿', name: 'Mozambique' },
- { flag: '🇲🇲', name: 'Myanmar' },
-  { flag: '🇳🇦', name: 'Namibia' },
-  { flag: '🇳🇷', name: 'Nauru' },
-  { flag: '🇳🇵', name: 'Nepal' }, 
-  { flag: '🇳🇱', name: 'Netherlands' },
-  { flag: '🇳🇨', name: 'New caledonia' },
- { flag: '🇳🇿', name: 'New zealand' },
-  { flag: '🇳🇮', name: 'Nicaragua' },
-  { flag: '🇳🇪', name: 'Niger' },
-  { flag: '🇳🇬', name: 'Nigeria' },
-  { flag: '🇳🇺', name: 'Niue' },
-  { flag: '🇳🇫', name: 'Norfolk island' },
-  { flag: '🇲🇵', name: 'Northern mariana islands' },
- { flag: '🇳🇴', name: 'Norway' },
-  { flag: '🇴🇲', name: 'Oman' },
-  { flag: '🇵🇰', name: 'Pakistan' },
-  { flag: '🇵🇼', name: 'Palau' },
-  { flag: '🇵🇸', name: 'Palestine, state of' },
-  { flag: '🇵🇦', name: 'Panama' },
-  { flag: '🇵🇬', name: 'Papua new guinea' },
-  { flag: '🇵🇾', name: 'Paraguay' },
-  { flag: '🇵🇪', name: 'Peru' },
- { flag: '🇵🇭', name: 'Philippines' },
-  { flag: '🇵🇳', name: 'Pitcairn' },
-  { flag: '🇵🇫', name: 'Polynesia French' },
- { flag: '🇵🇱', name: 'Poland' },
-  { flag: '🇵🇹', name: 'Portugal' },
-{ flag: '🇵🇷', name: 'Puerto rico' },
-  { flag: '🇶🇦', name: 'Qatar' },
-  { flag: '🇷🇪', name: 'Réunion' },
-  { flag: '🇷🇴', name: 'Romania' },
-  { flag: '🇷🇺', name: 'Russian federation' },
-  { flag: '🇷🇼', name: 'Rwanda' },
-  { flag: '🇪🇭', name: 'Sahara Western' },
-  { flag: '🇱🇨', name: 'Saint lucia' },
-  { flag: '🇲🇫', name: 'Saint martin (french part)' },
-  { flag: '🇵🇲', name: 'Saint pierre and miquelon' },
- { flag: '🇸🇭', name: 'Saint helena, ascension and tristan da cunha' },
-  { flag: '🇻🇨', name: 'Saint vincent and the grenadines' },
-  { flag: '🇼🇸', name: 'Samoa' },
-  { flag: '🇸🇲', name: 'San marino' },
-  { flag: '🇸🇦', name: 'Saudi arabia' },
-  { flag: '🇸🇳', name: 'Senegal' },
-  { flag: '🇷🇸', name: 'Serbia' },
-  { flag: '🇸🇨', name: 'Seychelles' },
-  { flag: '🇸🇱', name: 'Sierra leone' },
-  { flag: '🇸🇬', name: 'Singapore' },
-  { flag: '🇸🇽', name: 'Sint maarten (dutch part)' },
-  { flag: '🇸🇰', name: 'Slovakia' },
-  { flag: '🇸🇮', name: 'Slovenia' },
-  { flag: '🇸🇧', name: 'Solomon islands' },
-  { flag: '🇸🇩', name: 'Sudan' },
-  { flag: '🇸🇯', name: 'Svalbard and jan mayen' },
-  { flag: '🇸🇪', name: 'Sweden' },
-  { flag: '🇸🇴', name: 'Somalia' },
-  { flag: '🇸🇷', name: 'Suriname' },
-  { flag: '🇪🇦', name: 'Spain' },
-  { flag: '🇪🇸', name: 'Spain' },
-  { flag: '🇱🇰', name: 'Sri lanka' },
-  { flag: '🇸🇸', name: 'Sudan South' },
-  { flag: '🇹🇼', name: 'Taiwan' },
-  { flag: '🇹🇯', name: 'Tajikistan' },
-  { flag: '🇹🇿', name: 'Tanzania, united republic of' },
-  { flag: '🇹🇭', name: 'Thailand' },
-  { flag: '🇹🇱', name: 'Timor-leste' },
-{ flag: '🇹🇬', name: 'Togo' },
-  { flag: '🇹🇰', name: 'Tokelau' },
-  { flag: '🇹🇴', name: 'Tonga' },
-  { flag: '🇹🇹', name: 'Trinidad and tobago' },
-  { flag: '🇹🇦', name: 'Tristan da cunha' },
-  { flag: '🇹🇳', name: 'Tunisia' },
-  { flag: '🇹🇨', name: 'Turks and caicos islands' },
-  { flag: '🇹🇲', name: 'Turkmenistan' },
-  { flag: '🇹🇷', name: 'Turkey' },
-  { flag: '🇹🇻', name: 'Tuvalu' },
-  { flag: '🇺🇬', name: 'Uganda' },
-  { flag: '🇺🇦', name: 'Ukraine' },
-  { flag: '🇦🇪', name: 'United arab emirates' },
-  { flag: '🇬🇧', name: 'United kingdom' },
-  { flag: '🇺🇳', name: 'United nations' },
-  { flag: '🇺🇸', name: 'United States' },
-  { flag: '🇺🇾', name: 'Uruguay' },
-  { flag: '🇺🇿', name: 'Uzbekistan' },
-  { flag: '🇻🇺', name: 'Vanuatu' },
-  { flag: '🇻🇦', name: 'Vatican city' },
-  { flag: '🇻🇪', name: 'Venezuela (bolivarian republic of)' },
-  { flag: '🇻🇳', name: 'Vietnam' },
-  { flag: '🇻🇬', name: 'Virgin islands (british)' },
-  { flag: '🇻🇮', name: 'Virgin islands (u.s.)' },
-  { flag: '🇼🇫', name: 'Wallis and futuna' },
-  { flag: '🇾🇪', name: 'Yemen' },
-  { flag: '🇿🇲', name: 'Zambia' },
-  { flag: '🇿🇼', name: 'Zimbabwe' },
-  
-  ];  
-     
-     
-function parseWireguardToIni(line) {
-  try {
-    const u = new URL(line);
-    const p = u.searchParams;
-    const priv = decodeURIComponent(u.username);
-    const [host, port] = u.host.split(':');
-    const address = p.get('address') || '';
-    const psk     = p.get('presharedkey') || '';
-    const pub     = p.get('publickey')    || '';
-    const mtu     = p.get('mtu')          || '1420';
+    <script>
 
-    return [
-      '[Interface]',
-      `PrivateKey = ${priv}`,
-      `Address = ${address}`,
-      `MTU = ${mtu}`,
-      '',
-      '[Peer]',
-      `PublicKey = ${pub}`,
-      `PresharedKey = ${psk}`,
-      `Endpoint = ${host}:${port}`,
-      `PersistentKeepalive = 25`
-    ].join('\n');
-  } catch {
-    return '';
-  }
-}
 
-function parseIniToWireguard(block) {
-  try {
-    const lines = block.split(/\r?\n/);
-    const map = {};
-    lines.forEach(l => {
-      const [k, v] = l.split('=').map(s => s.trim());
-      if (k && v !== undefined) map[k] = v;
-    });
-    const url = new URL(`wireguard://${encodeURIComponent(map['PrivateKey'])}@${map['Endpoint']}`);
-    url.searchParams.set('address', map['Address'] || '');
-    url.searchParams.set('presharedkey', map['PresharedKey'] || '');
-    url.searchParams.set('publickey', map['PublicKey'] || '');
-    url.searchParams.set('mtu', map['MTU'] || '1420');
-    url.searchParams.set('reserved', '0,0,0');
-    return url.toString();
-  } catch {
-    return '';
-  }
-}
-    function extractAllJSON(text) {
-      const res = [], stack = [], starts = [];
-      for (let i = 0; i < text.length; i++) {
-        if (text[i] === '{') { if (!stack.length) starts.push(i); stack.push('{'); }
-        else if (text[i] === '}') {
-          stack.pop();
-          if (!stack.length && starts.length) {
-            const start = starts.pop();
-            try { res.push(JSON.parse(text.slice(start, i + 1))); } catch {}
-          }
-        }
-      }
-      return res;
-    }
+      const countries = [
+        { flag: '🌎', name: 'ОТКЛ' },
+        { flag: '🇦🇫', name: 'Afghanistan' },
+        { flag: '🇿🇦', name: 'Africa South' },
+        { flag: '🇦🇽', name: 'Aland island' },
+        { flag: '🇦🇱', name: 'Albania' },
+        { flag: '🇩🇿', name: 'Algeria' },
+        { flag: '🇦🇸', name: 'American samoa' },
+        { flag: '🇦🇩', name: 'Andorra' },
+        { flag: '🇦🇴', name: 'Angola' },
+        { flag: '🇦🇮', name: 'Anguilla' },
+        { flag: '🇦🇬', name: 'Antigua and barbuda' },
+        { flag: '🇦🇶', name: 'Antarctica' },
+        { flag: '🇦🇷', name: 'Argentina' },
+        { flag: '🇦🇲', name: 'Armenia' },
+        { flag: '🇦🇼', name: 'Aruba' },
+        { flag: '🇦🇨', name: 'Ascension island' },
+        { flag: '🇦🇺', name: 'Australia' },
+        { flag: '🇦🇹', name: 'Austria' },
+        { flag: '🇦🇿', name: 'Azerbaijan' },
+        { flag: '🇧🇸', name: 'Bahamas' },
+        { flag: '🇧🇭', name: 'Bahrain' },
+        { flag: '🇧🇩', name: 'Bangladesh' },
+        { flag: '🇧🇧', name: 'Barbados' },
+        { flag: '🇧🇾', name: 'Belarus' },
+        { flag: '🇧🇪', name: 'Belgium' },
+        { flag: '🇧🇿', name: 'Belize' },
+        { flag: '🇧🇯', name: 'Benin' },
+        { flag: '🇧🇲', name: 'Bermuda' },
+        { flag: '🇧🇹', name: 'Bhutan' },
+        { flag: '🇧🇴', name: 'Bolivia (plurinational state of)' },
+        { flag: '🇧🇦', name: 'Bosnia and herzegovina' },
+        { flag: '🇧🇻', name: 'Bouvet island' },
+        { flag: '🇧🇼', name: 'Botswana' },
+        { flag: '🇧🇷', name: 'Brazil' },
+        { flag: '🇮🇴', name: 'British indian ocean territory' },
+        { flag: '🇧🇳', name: 'Brunei darussalam' },
+        { flag: '🇧🇬', name: 'Bulgaria' },
+        { flag: '🇧🇫', name: 'Burkina faso' },
+        { flag: '🇧🇮', name: 'Burundi' },
+        { flag: '🇳🇨', name: 'Caledonia new' },
+        { flag: '🇰🇭', name: 'Cambodia' },
+        { flag: '🇨🇲', name: 'Cameroon' },
+        { flag: '🇨🇦', name: 'Canada' },
+        { flag: '🇮🇨', name: 'Canary islands' },
+        { flag: '🇨🇻', name: 'Cape verde' },
+        { flag: '🇧🇶', name: 'Caribbean Netherlands (Bonaire, Sint Eustatius & Saba)' },
+        { flag: '🇨🇫', name: 'Central african republic' },
+        { flag: '🇹🇩', name: 'Chad' },
+        { flag: '🇨🇱', name: 'Chile' },
+        { flag: '🇨🇳', name: 'China' },
+        { flag: '🇨🇽', name: 'Christmas island' },
+        { flag: '🇨🇵', name: 'Clipperton island' },
+        { flag: '🇨🇨', name: 'Cocos (keeling) islands' },
+        { flag: '🇨🇴', name: 'Colombia' },
+        { flag: '🇰🇲', name: 'Comoros' },
+        { flag: '🇨🇬', name: 'Congo' },
+        { flag: '🇨🇩', name: 'Congo, the democratic republic of the' },
+        { flag: '🇨🇰', name: 'Cook islands' },
+        { flag: '🇨🇷', name: 'Costa rica' },
+        { flag: '🇨🇮', name: 'Cote d`ivoire' },
+        { flag: '🇭🇷', name: 'Croatia' },
+        { flag: '🇨🇺', name: 'Cuba' },
+        { flag: '🇨🇼', name: 'Curaçao' },
+        { flag: '🇨🇾', name: 'Cyprus' },
+        { flag: '🇨🇿', name: 'Czechia' },
+        { flag: '🇩🇰', name: 'Denmark' },
+        { flag: '🇩🇬', name: 'Diego garcia' },
+        { flag: '🇩🇯', name: 'Djibouti' },
+        { flag: '🇩🇲', name: 'Dominica' },
+        { flag: '🇩🇴', name: 'Dominican republic' },
+        { flag: '🇪🇨', name: 'Ecuador' },
+        { flag: '🇪🇪', name: 'Estonia' },
+        { flag: '🇪🇬', name: 'Egypt' },
+        { flag: '🇸🇻', name: 'El salvador' },
+        { flag: '🇬🇶', name: 'Equatorial guinea' },
+        { flag: '🇪🇷', name: 'Eritrea' },
+        { flag: '🇪🇹', name: 'Ethiopia' },
+        { flag: '🇪🇺', name: 'European union' },
+        { flag: '🇫🇰', name: 'Falkland islands (malvinas)' },
+        { flag: '🇫🇴', name: 'Faroe islands' },
+        { flag: '🇫🇯', name: 'Fiji' },
+        { flag: '🇫🇮', name: 'Finland' },
+        { flag: '🇫🇷', name: 'France' },
+        { flag: '🇬🇫', name: 'French guiana' },
+        { flag: '🇵🇫', name: 'French polynesia' },
+        { flag: '🇹🇫', name: 'French southern territories' },
+        { flag: '🇬🇦', name: 'Gabon' },
+        { flag: '🇬🇲', name: 'Gambia' },
+        { flag: '🇬🇪', name: 'Georgia' },
+        { flag: '🇬🇸', name: 'Georgia South, and south sandwich islands' },
+        { flag: '🇩🇪', name: 'Germany' },
+        { flag: '🇬🇭', name: 'Ghana' },
+        { flag: '🇬🇮', name: 'Gibraltar' },
+        { flag: '🇬🇷', name: 'Greece' },
+        { flag: '🇬🇱', name: 'Greenland' },
+        { flag: '🇬🇩', name: 'Grenada' },
+        { flag: '🇬🇵', name: 'Guadeloupe' },
+        { flag: '🇬🇺', name: 'Guam' },
+        { flag: '🇬🇼', name: 'Guinea-bissau' },
+        { flag: '🇬🇳', name: 'Guinea' },
+        { flag: '🇬🇾', name: 'Guyana' },
+        { flag: '🇭🇹', name: 'Haiti' },
+        { flag: '🇭🇲', name: 'Heard island and mcdonald islands' },
+        { flag: '🇭🇰', name: 'Hong kong' },
+        { flag: '🇭🇳', name: 'Honduras' },
+        { flag: '🇭🇺', name: 'Hungary' },
+        { flag: '🇮🇸', name: 'Iceland' },
+        { flag: '🇮🇳', name: 'India' },
+        { flag: '🇮🇩', name: 'Indonesia' },
+        { flag: '🇮🇪', name: 'Ireland' },
+        { flag: '🇮🇱', name: 'Israel' },
+        { flag: '🇮🇲', name: 'Isle of man' },
+        { flag: '🇮🇶', name: 'Iraq' },
+        { flag: '🇮🇷', name: 'Iran (islamic republic of)' },
+        { flag: '🇮🇹', name: 'Italy' },
+        { flag: '🇯🇪', name: 'Jersey' },
+        { flag: '🇯🇲', name: 'Jamaica' },
+        { flag: '🇯🇴', name: 'Jordan' },
+        { flag: '🇯🇵', name: 'Japan' },
+        { flag: '🇰🇪', name: 'Kenya' },
+        { flag: '🇰🇮', name: 'Kiribati' },
+        { flag: '🇰🇷', name: 'Korea South' },
+        { flag: '🇰🇵', name: 'Korea North' },
+        { flag: '🇽🇰', name: 'Kosovo' },
+        { flag: '🇰🇼', name: 'Kuwait' },
+        { flag: '🇰🇿', name: 'Kazakhstan' },
+        { flag: '🇱🇦', name: 'Lao people’s democratic republic' },
+        { flag: '🇱🇻', name: 'Latvia' },
+        { flag: '🇱🇧', name: 'Lebanon' },
+        { flag: '🇱🇸', name: 'Lesotho' },
+        { flag: '🇱🇷', name: 'Liberia' },
+        { flag: '🇱🇾', name: 'Libya' },
+        { flag: '🇱🇮', name: 'Liechtenstein' },
+        { flag: '🇱🇹', name: 'Lithuania' },
+        { flag: '🇱🇺', name: 'Luxembourg' },
+        { flag: '🇲🇴', name: 'Macao, region of china' },
+        { flag: '🇲🇰', name: 'Macedonia North' },
+        { flag: '🇲🇬', name: 'Madagascar' },
+        { flag: '🇲🇾', name: 'Malaysia' },
+        { flag: '🇲🇱', name: 'Mali' },
+        { flag: '🇲🇹', name: 'Malta' },
+        { flag: '🇲🇻', name: 'Maldives' },
+        { flag: '🇲🇼', name: 'Malawi' },
+        { flag: '🇲🇭', name: 'Marshall islands' },
+        { flag: '🇲🇶', name: 'Martinique' },
+        { flag: '🇲🇷', name: 'Mauritania' },
+        { flag: '🇲🇺', name: 'Mauritius' },
+        { flag: '🇾🇹', name: 'Mayotte' },
+        { flag: '🇲🇽', name: 'Mexico' },
+        { flag: '🇲🇩', name: 'Moldova, republic of' },
+        { flag: '🇲🇨', name: 'Monaco' },
+        { flag: '🇲🇳', name: 'Mongolia' },
+        { flag: '🇲🇪', name: 'Montenegro' },
+        { flag: '🇲🇸', name: 'Montserrat' },
+        { flag: '🇲🇦', name: 'Morocco' },
+        { flag: '🇲🇿', name: 'Mozambique' },
+        { flag: '🇲🇲', name: 'Myanmar' },
+        { flag: '🇳🇦', name: 'Namibia' },
+        { flag: '🇳🇷', name: 'Nauru' },
+        { flag: '🇳🇵', name: 'Nepal' },
+        { flag: '🇳🇱', name: 'Netherlands' },
+        { flag: '🇳🇨', name: 'New caledonia' },
+        { flag: '🇳🇿', name: 'New zealand' },
+        { flag: '🇳🇮', name: 'Nicaragua' },
+        { flag: '🇳🇪', name: 'Niger' },
+        { flag: '🇳🇬', name: 'Nigeria' },
+        { flag: '🇳🇺', name: 'Niue' },
+        { flag: '🇳🇫', name: 'Norfolk island' },
+        { flag: '🇲🇵', name: 'Northern mariana islands' },
+        { flag: '🇳🇴', name: 'Norway' },
+        { flag: '🇴🇲', name: 'Oman' },
+        { flag: '🇵🇰', name: 'Pakistan' },
+        { flag: '🇵🇼', name: 'Palau' },
+        { flag: '🇵🇸', name: 'Palestine, state of' },
+        { flag: '🇵🇦', name: 'Panama' },
+        { flag: '🇵🇬', name: 'Papua new guinea' },
+        { flag: '🇵🇾', name: 'Paraguay' },
+        { flag: '🇵🇪', name: 'Peru' },
+        { flag: '🇵🇭', name: 'Philippines' },
+        { flag: '🇵🇳', name: 'Pitcairn' },
+        { flag: '🇵🇫', name: 'Polynesia French' },
+        { flag: '🇵🇱', name: 'Poland' },
+        { flag: '🇵🇹', name: 'Portugal' },
+        { flag: '🇵🇷', name: 'Puerto rico' },
+        { flag: '🇶🇦', name: 'Qatar' },
+        { flag: '🇷🇪', name: 'Réunion' },
+        { flag: '🇷🇴', name: 'Romania' },
+        { flag: '🇷🇺', name: 'Russian federation' },
+        { flag: '🇷🇼', name: 'Rwanda' },
+        { flag: '🇪🇭', name: 'Sahara Western' },
+        { flag: '🇱🇨', name: 'Saint lucia' },
+        { flag: '🇲🇫', name: 'Saint martin (french part)' },
+        { flag: '🇵🇲', name: 'Saint pierre and miquelon' },
+        { flag: '🇸🇭', name: 'Saint helena, ascension and tristan da cunha' },
+        { flag: '🇻🇨', name: 'Saint vincent and the grenadines' },
+        { flag: '🇼🇸', name: 'Samoa' },
+        { flag: '🇸🇲', name: 'San marino' },
+        { flag: '🇸🇦', name: 'Saudi arabia' },
+        { flag: '🇸🇳', name: 'Senegal' },
+        { flag: '🇷🇸', name: 'Serbia' },
+        { flag: '🇸🇨', name: 'Seychelles' },
+        { flag: '🇸🇱', name: 'Sierra leone' },
+        { flag: '🇸🇬', name: 'Singapore' },
+        { flag: '🇸🇽', name: 'Sint maarten (dutch part)' },
+        { flag: '🇸🇰', name: 'Slovakia' },
+        { flag: '🇸🇮', name: 'Slovenia' },
+        { flag: '🇸🇧', name: 'Solomon islands' },
+        { flag: '🇸🇩', name: 'Sudan' },
+        { flag: '🇸🇯', name: 'Svalbard and jan mayen' },
+        { flag: '🇸🇪', name: 'Sweden' },
+        { flag: '🇸🇴', name: 'Somalia' },
+        { flag: '🇸🇷', name: 'Suriname' },
+        { flag: '🇪🇦', name: 'Spain' },
+        { flag: '🇪🇸', name: 'Spain' },
+        { flag: '🇱🇰', name: 'Sri lanka' },
+        { flag: '🇸🇸', name: 'Sudan South' },
+        { flag: '🇹🇼', name: 'Taiwan' },
+        { flag: '🇹🇯', name: 'Tajikistan' },
+        { flag: '🇹🇿', name: 'Tanzania, united republic of' },
+        { flag: '🇹🇭', name: 'Thailand' },
+        { flag: '🇹🇱', name: 'Timor-leste' },
+        { flag: '🇹🇬', name: 'Togo' },
+        { flag: '🇹🇰', name: 'Tokelau' },
+        { flag: '🇹🇴', name: 'Tonga' },
+        { flag: '🇹🇹', name: 'Trinidad and tobago' },
+        { flag: '🇹🇦', name: 'Tristan da cunha' },
+        { flag: '🇹🇳', name: 'Tunisia' },
+        { flag: '🇹🇨', name: 'Turks and caicos islands' },
+        { flag: '🇹🇲', name: 'Turkmenistan' },
+        { flag: '🇹🇷', name: 'Turkey' },
+        { flag: '🇹🇻', name: 'Tuvalu' },
+        { flag: '🇺🇬', name: 'Uganda' },
+        { flag: '🇺🇦', name: 'Ukraine' },
+        { flag: '🇦🇪', name: 'United arab emirates' },
+        { flag: '🇬🇧', name: 'United kingdom' },
+        { flag: '🇺🇳', name: 'United nations' },
+        { flag: '🇺🇸', name: 'United States' },
+        { flag: '🇺🇾', name: 'Uruguay' },
+        { flag: '🇺🇿', name: 'Uzbekistan' },
+        { flag: '🇻🇺', name: 'Vanuatu' },
+        { flag: '🇻🇦', name: 'Vatican city' },
+        { flag: '🇻🇪', name: 'Venezuela (bolivarian republic of)' },
+        { flag: '🇻🇳', name: 'Vietnam' },
+        { flag: '🇻🇬', name: 'Virgin islands (british)' },
+        { flag: '🇻🇮', name: 'Virgin islands (u.s.)' },
+        { flag: '🇼🇫', name: 'Wallis and futuna' },
+        { flag: '🇾🇪', name: 'Yemen' },
+        { flag: '🇿🇲', name: 'Zambia' },
+        { flag: '🇿🇼', name: 'Zimbabwe' },
 
-    function countryCodeToFlag(cc) {
-      return cc.toUpperCase().replace(/./g, c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65));
-    }
+      ];
 
-    function buildGeoUrl(host) {
-      const tpl = document.getElementById('geoServiceInput').value.trim().replace(/\/+$/, '');
-      if (tpl.includes('{ip}')) return tpl.replace(/{ip}/g, host);
-      if (tpl.includes('?')) return `${tpl}&ip=${host}`;
-      return `${tpl}/${host}`;
-    }
 
-    function buildURLFromLegacy(o, urls) {
-      const p = new URLSearchParams();
-      p.set('security', o.method || 'none');
-      p.set('type', o.network || '');
-      if (o.headerType) p.set('headerType', o.headerType);
-      if (o.host) p.set('host', o.host);
-      if (o.sni) p.set('sni', o.sni);
-      if (o.path) p.set('path', o.path);
-      if (o.alpn) p.set('alpn', Array.isArray(o.alpn) ? o.alpn.join(',') : o.alpn);
-      if (o.pbk) p.set('pbk', o.pbk);
-      if (o.sid) p.set('sid', o.sid);
-      if (o.flow) p.set('flow', o.flow);
-      if (o.seed) p.set('seed', o.seed);
-      if (o.serviceName) p.set('serviceName', o.serviceName);
-      p.set('allowInsecure', o.insecure ? '1' : '0');
-      const tag = encodeURIComponent(o.remarks || o.customConfig?.name || '');
-      const base = `vless://${o.password}@${o.server}:${o.serverPort}`;
-      urls.push(`${base}?${p.toString()}#${tag}`);
-    }
 
-    function buildURLsFromOutboundBean(obj, urls) {
-      buildURLFromOutbound(obj.outboundBean, obj.remarks, urls);
-    }
-
-    function buildURLsFromCustomJSON(obj, urls) {
-      obj.custom_json.outbounds.forEach(o => buildURLFromOutbound(o, obj.remarks, urls));
-    }
-
-    function buildURLFromOutbound(o, remarks, urls) {
-      const proto = o.protocol;
-      const tag = encodeURIComponent(remarks || o.tag || proto);
-      const p = new URLSearchParams();
-      let base = '';
-
-      if (proto === 'shadowsocks') {
-        (o.settings.servers || []).forEach(s => {
-          const a = btoa(`${s.method}:${s.password}`).replace(/=+$/, '');
-          urls.push(`ss://${a}@${s.address}:${s.port}#${tag}`);
-        });
-        return;
-      }
-
-      if (proto === 'vmess' || proto === 'vless') {
-        const v = o.settings.vnext?.[0];
-        const u = v?.users?.[0];
-        if (v && u) {
-          base = `${proto}://${u.id}@${v.address}:${v.port}`;
-          p.set('encryption', u.encryption || u.security || (proto === 'vmess' ? 'auto' : 'none'));
-          if (u.flow) p.set('flow', u.flow);
-        }
-      }
-
-      if (proto === 'trojan') {
-        const s = o.settings.servers?.[0];
-        if (s) {
-          base = `trojan://${encodeURIComponent(s.password)}@${s.address}:${s.port}`;
-        }
-      }
-
-      if (proto === 'wireguard') {
-        const s    = o.settings;
-        const peer = s.peers?.[0];
-        if (s && peer) {
-          const url = new URL(`wireguard://${peer.endpoint}`);
-          url.username = s.secretKey;
-          url.searchParams.set('address', s.address?.[0] || '');
-          url.searchParams.set('presharedkey', peer.preSharedKey);
-          url.searchParams.set('publickey', peer.publicKey);
-          url.searchParams.set('mtu', s.mtu || 1420);
-          url.searchParams.set('reserved', '0,0,0');
-          urls.push(url.toString());
-        }
-        return;
-      }
-
-      if (proto === 'hysteria2') {
-        const srv = o.settings.servers?.[0];
-        const hy = o.streamSettings.hy2Settings;
-        if (srv && hy) {
-          base = `hysteria2://${encodeURIComponent(hy.password)}@${srv.address}:${srv.port}`;
-          if (hy.use_udp_extension) p.set('insecure', '1');
-          if (o.streamSettings.tlsSettings.allowInsecure) p.set('insecure', '1');
-          if (o.streamSettings.tlsSettings.serverName) p.set('sni', o.streamSettings.tlsSettings.serverName);
-        }
-      }
-
-      if (!base) return;
-
-      const st = o.streamSettings || {};
-      const tls = st.tlsSettings || {};
-      const rel = st.realitySettings || {};
-
-      if (st.security) p.set('security', st.security);
-      if (tls.allowInsecure) p.set('allowInsecure', '1');
-      if (Array.isArray(tls.alpn)) p.set('alpn', tls.alpn.join(','));
-      if (tls.serverName) p.set('sni', tls.serverName);
-      else if (rel.serverName) p.set('sni', rel.serverName);
-      if (tls.fingerprint) p.set('fp', tls.fingerprint);
-      if (rel.publicKey) p.set('pbk', rel.publicKey);
-      if (rel.shortId) p.set('sid', rel.shortId);
-      if (st.grpcSettings?.serviceName) p.set('serviceName', st.grpcSettings.serviceName);
-      if (st.kcpSettings?.seed) p.set('seed', st.kcpSettings.seed);
-
-      
-      let net = st.network || '';
-  if (!net) {
-    if (st.wsSettings) net = 'ws';
-    else if (st.httpupgradeSettings) net = 'httpupgrade';
-    else if (st.splithttpSettings) net = 'splithttp';
-    else if (st.httpSettings) net = 'http';
-    else net = 'tcp';
-  }
-  if (net === 'splithttp') net = 'xhttp';
-  p.set('type', net);
-
-  let host = '';
-  let path = '';
-  if (net === 'ws' && st.wsSettings) {
-    host = st.wsSettings.headers?.Host || '';
-    path = st.wsSettings.path || '';
-  } else if (net === 'xhttp' && st.xhttpSettings) {
-    host = Array.isArray(st.xhttpSettings.host)
-           ? st.xhttpSettings.host[0]
-           : st.xhttpSettings.host || '';
-    path = st.xhttpSettings.path || '';
-  } else if (net === 'xhttp' && st.splithttpSettings) {
-    host = st.splithttpSettings.host || '';
-    path = st.splithttpSettings.path || '';
-  } else if (net === 'httpupgrade' && st.httpupgradeSettings) {
-    host = Array.isArray(st.httpupgradeSettings.host)
-           ? st.httpupgradeSettings.host[0]
-           : st.httpupgradeSettings.host || '';
-    path = st.httpupgradeSettings.path || '';
-  } else if (net === 'http' && st.httpSettings) {
-    host = Array.isArray(st.httpSettings.host)
-           ? st.httpSettings.host[0]
-           : st.httpSettings.host || '';
-    path = st.httpSettings.path || '';
-  } else if (net === 'tcp' && st.tcpSettings?.header?.type === 'http') {
-    const rq = st.tcpSettings.header.request;
-    host = (rq.headers?.Host || [''])[0] || '';
-    path = (rq.path || [''])[0] || '';
-    p.set('headerType', 'http');
-  }
-  // --- блок завершён ---
-
-  if (host) p.set('host', host);
-  if (path) p.set('path', path);
-
-  urls.push(`${base}?${p.toString()}#${tag}`);
-}
-
-    function decodeVmessBase64(line) {
-      try {
-        const b64 = line.replace(/^vmess:\/\//, '').trim();
-        const raw = atob(b64);
-        let str;
+      function parseWireguardToIni(line) {
         try {
-          str = decodeURIComponent(escape(raw));
-        } catch (e) {
-          str = raw;
+          const u = new URL(line);
+          const p = u.searchParams;
+          const priv = decodeURIComponent(u.username);
+          const [host, port] = u.host.split(':');
+          const address = p.get('address') || '';
+          const psk = p.get('presharedkey') || '';
+          const pub = p.get('publickey') || '';
+          const mtu = p.get('mtu') || '1420';
+
+          return [
+            '[Interface]',
+            `PrivateKey = ${priv}`,
+            `Address = ${address}`,
+            `MTU = ${mtu}`,
+            '',
+            '[Peer]',
+            `PublicKey = ${pub}`,
+            // Здесь важно именно "PreSharedKey" с большой буквой S
+            `PreSharedKey = ${psk}`,
+            `Endpoint = ${host}:${port}`,
+            `PersistentKeepalive = 25`
+          ].join('\n');
+        } catch {
+          return '';
         }
-        const json = JSON.parse(str);
-        const ps = json.ps || '';
-        const add = json.add;
-        const port = json.port;
-        const id = json.id;
-        const params = new URLSearchParams();
-        if (json.security)     params.set('security', json.security);
-        if (json.encryption)   params.set('encryption', json.encryption);
-        if (json.net)          params.set('type', json.net);
-        if (json.type)         params.set('headerType', json.type);
-        if (json.host)         params.set('host', json.host);
-        if (json.path)         params.set('path', json.path);
-        if (json.sni)          params.set('sni', json.sni);
-        if (json.fingerprint)  params.set('fp', json.fingerprint);
-        if (json.alpn)         params.set('alpn', Array.isArray(json.alpn) ? json.alpn.join(',') : json.alpn);
-        if (json.flow)         params.set('flow', json.flow);
-        if (json.pbk)          params.set('pbk', json.pbk);
-        if (json.sid)          params.set('sid', json.sid);
-        if (json.seed)         params.set('seed', json.seed);
-        if (json.serviceName)  params.set('serviceName', json.serviceName);
-        if (json.allowInsecure)params.set('allowInsecure', json.allowInsecure ? '1' : '0');
-        return (`vmess://${id}@${add}:${port}${params.toString() ? '?' + params.toString() : ''}#${ps}`)
-               .replace(/%2F/g,'/')
-               .replace(/%2B/g,'+');
-      } catch (e) {
-        return line;
       }
-    }
 
-    function parseWireguardURL(l) {
-      const u = new URL(l);
-      const secretKeyRaw = decodeURIComponent(u.username);
-      const endpoint = u.host;
-      const params = u.searchParams;
-      const address = params.get('address') || '';
-      const presharedKey = params.get('presharedkey') || '';
-      const publicKey = params.get('publickey') || '';
-      const mtu = parseInt(params.get('mtu'), 10) || 1420;
-
-      return {
-        protocol: 'wireguard',
-        tag: u.hash ? decodeURIComponent(u.hash.slice(1)) : 'wireguard',
-        settings: {
-          address: [ decodeURIComponent(address) ],
-          mtu,
-          secretKey: secretKeyRaw,
-          peers: [{
-            endpoint,
-            keepAlive: 25,
-            preSharedKey: presharedKey,
-            publicKey
-          }]
-        }
-      };
-    }
-
-    function handleSpecialJunkConfig(obj, urls) {
-      if (!obj.config || typeof obj.config !== 'string') return false;
-      try {
-        const cfg = JSON.parse(obj.config), rootAddress = obj.address || '', rootId = obj.server_id || '';
-        if (Array.isArray(cfg.outbounds)) {
-          cfg.outbounds.forEach(o => {
-            if (o.settings?.vnext?.[0] && !o.settings.vnext[0].address && rootAddress) o.settings.vnext[0].address = rootAddress;
-            if (o.settings?.vnext?.[0]?.users?.[0] && !o.settings.vnext[0].users[0].id && rootId) o.settings.vnext[0].users[0].id = rootId;
-            if (o.streamSettings?.realitySettings && cfg.outbounds[0].streamSettings?.realitySettings?.spiderX) o.streamSettings.realitySettings.spiderX = cfg.outbounds[0].streamSettings.realitySettings.spiderX;
-            buildURLFromOutbound(o, obj.remarks, urls);
+      function parseIniToWireguard(block) {
+        try {
+          const lines = block.split(/\r?\n/);
+          const map = {};
+          lines.forEach(l => {
+            const [k, v] = l.split('=').map(s => s.trim());
+            if (k && v !== undefined) map[k] = v;
           });
-          return true;
-        }
-      } catch {}
-      return false;
-    }
 
-    function handleJunkConfig(obj, urls) {
-      if (obj.configType === 'SHADOWSOCKS' && obj.method && obj.password && obj.server && obj.serverPort) {
-        const a = btoa(`${obj.method}:${obj.password}`).replace(/=+$/, ''), tag = encodeURIComponent(obj.remarks || '');
-        urls.push(`ss://${a}@${obj.server}:${obj.serverPort}#${tag}`);
-        return true;
-      }
-      if (obj.configType === 'VLESS' && obj.password && obj.server && obj.serverPort) {
-        const params = new URLSearchParams();
-        params.set('encryption', obj.method || 'none');
-        params.set('security', obj.security || '');
-        if (obj.flow) params.set('flow', obj.flow);
-        if (obj.network) params.set('type', obj.network);
-        if (obj.headerType) params.set('headerType', obj.headerType);
-        if (obj.host) params.set('host', obj.host);
-        if (obj.path) params.set('path', obj.path);
-        if (obj.sni) params.set('sni', obj.sni);
-        if (obj.fingerPrint) params.set('fp', obj.fingerPrint);
-        if (obj.alpn) params.set('alpn', Array.isArray(obj.alpn) ? obj.alpn.join(',') : obj.alpn);
-        if (obj.publicKey) params.set('pbk', obj.publicKey);
-        if (obj.shortId) params.set('sid', obj.shortId);
-        if (obj.allowInsecure !== undefined) params.set('allowInsecure', obj.allowInsecure ? '1' : '0');
-        const tag = encodeURIComponent(obj.remarks || '');
-        urls.push(`vless://${obj.password}@${obj.server}:${obj.serverPort}?${params.toString()}#${tag}`);
-        return true;
-      }
-      return false;
-    }
-
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const inEl = document.getElementById('inputConfig'),
-            outEl = document.getElementById('outputResult'),
-            filterInput = document.getElementById('filterInput'),
-            btnFilter = document.getElementById('btnFilter'),
-            ipGeoToggle = document.getElementById('ipGeoToggle'),
-            spinner = document.getElementById('spinner'),
-            statusEl = document.getElementById('processStatus'),
-            btnCountry = document.getElementById('btnCountry'),
-            btnPing = document.getElementById('btnPing'),
-            countryPopup = document.getElementById('countryPopup'),
-            fileInput = document.getElementById('fileInput'),
-            hiddenDownloadLink = document.getElementById('hiddenDownloadLink'),
-            btnSettingsLocal = document.getElementById('btnSettings'),
-            settingsModalLocal = document.getElementById('settingsModal'),
-            closeSettingsLocal = document.getElementById('closeSettings'),
-            btnClearInput = document.getElementById('btnClearInput'),
-            btnClearOutput = document.getElementById('btnClearOutput');
-
-      let selectedCountry = 'OFF';
-      let ipWsToggled = false;
-
-      function initCountryPopup() {
-        countryPopup.innerHTML = '';
-        const container = document.createElement('div');
-        container.className = 'search-container';
-        const searchEl = document.createElement('input');
-        searchEl.type = 'text';
-        searchEl.placeholder = 'Поиск…';
-        container.appendChild(searchEl);
-        countryPopup.appendChild(container);
-        const listEl = document.createElement('div');
-        listEl.className = 'country-list';
-        countryPopup.appendChild(listEl);
-        searchEl.addEventListener('input', () => filterCountries(searchEl.value, listEl));
-        filterCountries('', listEl);
-      }
-
-      function filterCountries(term, listEl) {
-        const lower = term.toLowerCase();
-        listEl.innerHTML = '';
-        countries.forEach(c => {
-          const matchName = !lower || c.name.toLowerCase().startsWith(lower);
-          const matchFlag = term.includes(c.flag);
-          if (matchName || matchFlag) {
-            const item = document.createElement('div');
-            item.className = 'country-item';
-            item.innerHTML = `<span>${c.flag}</span><span>${c.name}</span>`;
-            item.onclick = () => {
-              selectedCountry = c.flag;
-              btnCountry.textContent = c.flag;
-              countryPopup.style.display = 'none';
-            };
-            listEl.appendChild(item);
-          }
-        });
-      }
-
-      btnCountry.addEventListener('click', e => {
-        e.stopPropagation();
-        countryPopup.style.display = countryPopup.style.display === 'block' ? 'none' : 'block';
-        if (countryPopup.style.display === 'block') initCountryPopup();
-      });
-      document.addEventListener('click', () => {
-        if (countryPopup.style.display === 'block') countryPopup.style.display = 'none';
-      });
-      countryPopup.addEventListener('click', e => e.stopPropagation());
-
-      function setStatus(html, spinning) {
-        statusEl.innerHTML = html;
-        spinner.style.display = spinning ? 'inline-block' : 'none';
-      }
-
-      
-const tcpBaseline = 99;
-const httpBaseline = 999;
-const httpFactor = tcpBaseline / httpBaseline;
-
-async function pingHost(host) {
-  const timeoutMs = 5000;
-  const start = performance.now();
-  const proto = location.protocol === 'https:' ? 'https:' : 'http:';
-  try {
-    await Promise.race([
-      fetch(`${proto}//${host}`, { mode: 'no-cors' }),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs))
-    ]);
-    const duration = Math.round(performance.now() - start);
-    const adjusted = Math.round(duration * httpFactor);
-    return { host, time: adjusted, status: `🔘 ${adjusted}ms` };
-  } catch {
-    return { host, time: Infinity, status: '❌ тайм-аут' };
-  }
-}
-
-let pinging = false, resultsPing = [];
-async function pingAll() {
-  pinging = true;
-  resultsPing = [];
-  // ... остальной код ...
-
-        const lines = inEl.value.split(/\r?\n/).filter(Boolean), total = lines.length;
-        for (let i = 0; i < total; i++) {
-          if (!pinging) break;
-          let host;
-          try { host = new URL(lines[i]).hostname; }
-          catch { const m = lines[i].match(/\/\/([^\/:]+)/); host = m ? m[1] : lines[i]; }
-          const res = await pingHost(host);
-          resultsPing.push({ ...res, original: lines[i] });
-          setStatus(`пинг… ${Math.round(resultsPing.length / total * 100)}%`, true);
-          const sorted = resultsPing.slice().sort((a, b) => a.time - b.time);
-          outEl.value = sorted.map(r => `${r.original} ${r.status}`).join('\n');
-        }
-        setStatus('готово!', false); pinging = false;
-      }
-
-      btnPing.onclick = () => pinging ? (pinging = false, setStatus('', false)) : pingAll();
-
-      btnFilter.onclick = async () => {
-        const raw = inEl.value.trim(),
-              filterVal = filterInput.value.trim();
-
-    
-    if (filterInput.value.trim().match(/^https?:\/\//)) {
-          const urls = filterInput.value.trim().split(/\s+/);
-          const downloaded = [];
-          setStatus('загрузка...<br>0%', true);
-          for (let i = 0; i < urls.length; i++) {
-            let txt = '';
-            try {
-              const resp = await fetch(urls[i]);
-              txt = resp.ok ? await resp.text() : '';
-            } catch {
-              const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(urls[i]);
-              const resp2 = await fetch(proxy);
-              txt = resp2.ok ? await resp2.text() : '';
+          // helper: case-insensitive lookup for keys like PresharedKey / presharedkey / psk / preSharedKey
+          function findKeyIgnoreCase(obj, candidates) {
+            const keys = Object.keys(obj);
+            for (const cand of candidates) {
+              const low = cand.toLowerCase();
+              const found = keys.find(k => k.toLowerCase() === low);
+              if (found) return obj[found];
             }
-            const b64 = txt.trim().replace(/\s+/g, '');
-            if (/^[A-Za-z0-9+/=]+$/.test(b64) && b64.length % 4 === 0) {
-              try { txt = atob(b64); } catch {}
-            }
-            downloaded.push(txt);
-            setStatus(`загрузка...<br>${Math.round((i+1)/urls.length*100)}%`, true);
+            return undefined;
           }
-          inEl.value = downloaded.join('\n');
-          setStatus('готово!', false);
+
+          const privateKey = map['PrivateKey'] || map['Privatekey'] || findKeyIgnoreCase(map, ['privatekey', 'private_key']) || '';
+          // endpoint should be like host:port — если нет, оставим как есть
+          const endpoint = map['Endpoint'] || map['Endpoint '] || findKeyIgnoreCase(map, ['endpoint', 'endpoint_address']) || '';
+
+          // Ищем pre-shared key по разным вариантам имён (регистр-независимо)
+          const pskCandidates = ['PresharedKey', 'Presharedkey', 'presharedkey', 'PSK', 'psk', 'PreSharedKey', 'PreSharedkey'];
+          const pskValue = map['PresharedKey'] || findKeyIgnoreCase(map, pskCandidates) || '';
+
+          const address = map['Address'] || map['Address '] || findKeyIgnoreCase(map, ['address']) || '';
+          const publicKey = map['PublicKey'] || map['Publickey'] || findKeyIgnoreCase(map, ['publickey', 'public_key']) || '';
+          const mtu = map['MTU'] || map['Mtu'] || findKeyIgnoreCase(map, ['mtu']) || '1420';
+
+          // Собираем URL
+          // username = private key; host = endpoint
+          const url = new URL(`wireguard://${encodeURIComponent(privateKey)}@${endpoint}`);
+          if (address) url.searchParams.set('address', address);
+          if (pskValue) url.searchParams.set('presharedkey', pskValue);
+          if (publicKey) url.searchParams.set('publickey', publicKey);
+          url.searchParams.set('mtu', mtu || '1420');
+          url.searchParams.set('reserved', '0,0,0');
+
+          return url.toString();
+        } catch {
+          return '';
+        }
+      }
+
+      function extractAllJSON(text) {
+        const res = [], stack = [], starts = [];
+        for (let i = 0; i < text.length; i++) {
+          if (text[i] === '{') { if (!stack.length) starts.push(i); stack.push('{'); }
+          else if (text[i] === '}') {
+            stack.pop();
+            if (!stack.length && starts.length) {
+              const start = starts.pop();
+              try { res.push(JSON.parse(text.slice(start, i + 1))); } catch { }
+            }
+          }
+        }
+        return res;
+      }
+
+      function countryCodeToFlag(cc) {
+        return cc.toUpperCase().replace(/./g, c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65));
+      }
+
+      function buildGeoUrl(host) {
+        const tpl = document.getElementById('geoServiceInput').value.trim().replace(/\/+$/, '');
+        if (tpl.includes('{ip}')) return tpl.replace(/{ip}/g, host);
+        if (tpl.includes('?')) return `${tpl}&ip=${host}`;
+        return `${tpl}/${host}`;
+      }
+
+      function buildURLFromLegacy(o, urls) {
+        const p = new URLSearchParams();
+        p.set('security', o.method || 'none');
+        p.set('type', o.network || '');
+        if (o.headerType) p.set('headerType', o.headerType);
+        if (o.host) p.set('host', o.host);
+        if (o.sni) p.set('sni', o.sni);
+        if (o.path) p.set('path', o.path);
+        if (o.alpn) p.set('alpn', Array.isArray(o.alpn) ? o.alpn.join(',') : o.alpn);
+        if (o.pbk) p.set('pbk', o.pbk);
+        if (o.sid) p.set('sid', o.sid);
+        if (o.flow) p.set('flow', o.flow);
+        if (o.seed) p.set('seed', o.seed);
+        if (o.serviceName) p.set('serviceName', o.serviceName);
+        p.set('allowInsecure', o.insecure ? '1' : '0');
+        const tag = encodeURIComponent(o.remarks || o.customConfig?.name || '');
+        const base = `vless://${o.password}@${o.server}:${o.serverPort}`;
+        urls.push(`${base}?${p.toString()}#${tag}`);
+      }
+
+      function buildURLsFromOutboundBean(obj, urls) {
+        buildURLFromOutbound(obj.outboundBean, obj.remarks, urls);
+      }
+
+      function buildURLsFromCustomJSON(obj, urls) {
+        obj.custom_json.outbounds.forEach(o => buildURLFromOutbound(o, obj.remarks, urls));
+      }
+
+      function buildURLFromOutbound(o, remarks, urls) {
+        const proto = o.protocol;
+        const tag = encodeURIComponent(remarks || o.tag || proto);
+        const p = new URLSearchParams();
+        let base = '';
+
+        if (proto === 'shadowsocks') {
+          (o.settings.servers || []).forEach(s => {
+            const a = btoa(`${s.method}:${s.password}`).replace(/=+$/, '');
+            urls.push(`ss://${a}@${s.address}:${s.port}#${tag}`);
+          });
           return;
         }
 
-        
-      btnFilter.disabled = true; setStatus('запуск...<br>0%', true);
-        const rawLines = inEl.value.split(/\r?\n/).filter(Boolean), results = [];
+        if (proto === 'vmess' || proto === 'vless') {
+          const v = o.settings.vnext?.[0];
+          const u = v?.users?.[0];
+          if (v && u) {
+            base = `${proto}://${u.id}@${v.address}:${v.port}`;
+            p.set('encryption', u.encryption || u.security || (proto === 'vmess' ? 'auto' : 'none'));
+            if (u.flow) p.set('flow', u.flow);
+          }
+        }
 
-        if (ipGeoToggle.checked) {
-          const seen = {};
-          for (let i = 0; i < rawLines.length; i++) {
-            const line = rawLines[i].trim();
-            let host;
-            try { host = new URL(line).hostname; }
-            catch { host = (line.match(/\/\/([^\/:]+)/) || [])[1] || line; }
-            if (!seen[host]) {
-              try {
-                const res = await fetch(buildGeoUrl(host));
-                const d = await res.json();
-                const code = (d.country_code || d.countryCode || d.code || d.geoplugin_countryCode || d.country || '').toUpperCase();
-                let name = d.country_name || d.countryName || d.geoplugin_countryName || d.country || host;
-                if (code) {
-                  const isShort = name.length <= 3 || name.toUpperCase() === code;
-                  if (isShort) {
-                    const flag = countryCodeToFlag(code);
-                    const entry = countries.find(c => c.flag === flag);
-                    if (entry) name = entry.name;
-                  }
-                  seen[host] = `${countryCodeToFlag(code)} ${name}`;
+        if (proto === 'trojan') {
+          const s = o.settings.servers?.[0];
+          if (s) {
+            base = `trojan://${encodeURIComponent(s.password)}@${s.address}:${s.port}`;
+          }
+        }
+
+        if (proto === 'wireguard') {
+          const s = o.settings;
+          const peer = s.peers?.[0];
+          if (s && peer) {
+            const url = new URL(`wireguard://${peer.endpoint}`);
+            url.username = s.secretKey;
+            url.searchParams.set('address', s.address?.[0] || '');
+            url.searchParams.set('presharedkey', peer.preSharedKey);
+            url.searchParams.set('publickey', peer.publicKey);
+            url.searchParams.set('mtu', s.mtu || 1420);
+            url.searchParams.set('reserved', '0,0,0');
+            urls.push(url.toString());
+          }
+          return;
+        }
+
+        if (proto === 'hysteria2') {
+          const srv = o.settings.servers?.[0];
+          const hy = o.streamSettings.hy2Settings;
+          if (srv && hy) {
+            base = `hysteria2://${encodeURIComponent(hy.password)}@${srv.address}:${srv.port}`;
+            if (hy.use_udp_extension) p.set('insecure', '1');
+            if (o.streamSettings.tlsSettings.allowInsecure) p.set('insecure', '1');
+            if (o.streamSettings.tlsSettings.serverName) p.set('sni', o.streamSettings.tlsSettings.serverName);
+          }
+        }
+
+        if (!base) return;
+
+        const st = o.streamSettings || {};
+        const tls = st.tlsSettings || {};
+        const rel = st.realitySettings || {};
+
+        if (st.security) p.set('security', st.security);
+        if (tls.allowInsecure) p.set('allowInsecure', '1');
+        if (Array.isArray(tls.alpn)) p.set('alpn', tls.alpn.join(','));
+        if (tls.serverName) p.set('sni', tls.serverName);
+        else if (rel.serverName) p.set('sni', rel.serverName);
+        if (tls.fingerprint) p.set('fp', tls.fingerprint);
+        if (rel.publicKey) p.set('pbk', rel.publicKey);
+        if (rel.shortId) p.set('sid', rel.shortId);
+        if (st.grpcSettings?.serviceName) p.set('serviceName', st.grpcSettings.serviceName);
+        if (st.kcpSettings?.seed) p.set('seed', st.kcpSettings.seed);
+
+        let net = st.network || '';
+        if (!net) {
+          if (st.wsSettings) net = 'ws';
+          else if (st.httpupgradeSettings) net = 'httpupgrade';
+          else if (st.splithttpSettings) net = 'splithttp';
+          else if (st.httpSettings) net = 'http';
+          else net = 'tcp';
+        }
+        if (net === 'splithttp') net = 'xhttp';
+        p.set('type', net);
+
+
+        // Заменить блок определения host/path внутри функции buildURLFromOutbound (вместо существующего "let host = ''; let path = ''; ...")
+        let host = '';
+        let path = '';
+
+        // Унифицированный сбор host/path для ws, splithttp, xhttp (xhttpSettings), httpupgrade, http и tcp(header=http)
+        if (net === 'ws' && st.wsSettings) {
+          host = st.wsSettings.headers?.Host || '';
+          path = st.wsSettings.path || '';
+        } else if (net === 'xhttp') {
+          // xhttp может быть в splithttpSettings или в xhttpSettings; поддерживаем оба варианта
+          if (st.splithttpSettings) {
+            host = Array.isArray(st.splithttpSettings.host) ? st.splithttpSettings.host[0] : (st.splithttpSettings.host || '');
+            path = st.splithttpSettings.path || '';
+          } else if (st.xhttpSettings) {
+            host = Array.isArray(st.xhttpSettings.host) ? st.xhttpSettings.host[0] : (st.xhttpSettings.host || '');
+            path = st.xhttpSettings.path || '';
+          } else {
+            // последний общий фолбэк на случай нетипичных структур
+            const hp = st.httpSettings || st.httpupgradeSettings || {};
+            host = Array.isArray(hp.host) ? hp.host[0] : (hp.host || '');
+            path = hp.path || '';
+          }
+        } else if (net === 'httpupgrade' && st.httpupgradeSettings) {
+          host = Array.isArray(st.httpupgradeSettings.host) ? st.httpupgradeSettings.host[0] : (st.httpupgradeSettings.host || '');
+          path = st.httpupgradeSettings.path || '';
+        } else if (net === 'http' && st.httpSettings) {
+          host = Array.isArray(st.httpSettings.host) ? st.httpSettings.host[0] : (st.httpSettings.host || '');
+          path = st.httpSettings.path || '';
+        } else if (net === 'tcp' && st.tcpSettings?.header?.type === 'http') {
+          const rq = st.tcpSettings.header.request || {};
+          host = (rq.headers?.Host || [''])[0] || '';
+          path = (rq.path || [''])[0] || '';
+          p.set('headerType', 'http');
+        }
+
+        if (host) p.set('host', host);
+        if (path) p.set('path', path);
+
+        urls.push(`${base}?${p.toString()}#${tag}`);
+      }
+
+      function decodeVmessBase64(line) {
+        try {
+          const b64 = line.replace(/^vmess:\/\//, '').trim();
+          const raw = atob(b64);
+          let str;
+          try {
+            str = decodeURIComponent(escape(raw));
+          } catch (e) {
+            str = raw;
+          }
+          const json = JSON.parse(str);
+          const ps = json.ps || '';
+          const add = json.add;
+          const port = json.port;
+          const id = json.id;
+          const params = new URLSearchParams();
+          if (json.security) params.set('security', json.security);
+          if (json.encryption) params.set('encryption', json.encryption);
+          if (json.net) params.set('type', json.net);
+          if (json.type) params.set('headerType', json.type);
+          if (json.host) params.set('host', json.host);
+          if (json.path) params.set('path', json.path);
+          if (json.sni) params.set('sni', json.sni);
+          if (json.fingerprint) params.set('fp', json.fingerprint);
+          if (json.alpn) params.set('alpn', Array.isArray(json.alpn) ? json.alpn.join(',') : json.alpn);
+          if (json.flow) params.set('flow', json.flow);
+          if (json.pbk) params.set('pbk', json.pbk);
+          if (json.sid) params.set('sid', json.sid);
+          if (json.seed) params.set('seed', json.seed);
+          if (json.serviceName) params.set('serviceName', json.serviceName);
+          if (json.allowInsecure) params.set('allowInsecure', json.allowInsecure ? '1' : '0');
+          return (`vmess://${id}@${add}:${port}${params.toString() ? '?' + params.toString() : ''}#${ps}`)
+            .replace(/%2F/g, '/')
+            .replace(/%2B/g, '+');
+        } catch (e) {
+          return line;
+        }
+      }
+
+      function parseWireguardURL(l) {
+        const u = new URL(l);
+        const secretKeyRaw = decodeURIComponent(u.username);
+        const endpoint = u.host;
+        const params = u.searchParams;
+        const address = params.get('address') || '';
+        const presharedKey = params.get('presharedkey') || '';
+        const publicKey = params.get('publickey') || '';
+        const mtu = parseInt(params.get('mtu'), 10) || 1420;
+
+        return {
+          protocol: 'wireguard',
+          tag: u.hash ? decodeURIComponent(u.hash.slice(1)) : 'wireguard',
+          settings: {
+            address: [decodeURIComponent(address)],
+            mtu,
+            secretKey: secretKeyRaw,
+            peers: [{
+              endpoint,
+              keepAlive: 25,
+              preSharedKey: presharedKey,
+              publicKey
+            }]
+          }
+        };
+      }
+
+      function handleSpecialJunkConfig(obj, urls) {
+        if (!obj.config || typeof obj.config !== 'string') return false;
+        try {
+          const cfg = JSON.parse(obj.config), rootAddress = obj.address || '', rootId = obj.server_id || '';
+          if (Array.isArray(cfg.outbounds)) {
+            cfg.outbounds.forEach(o => {
+              if (o.settings?.vnext?.[0] && !o.settings.vnext[0].address && rootAddress) o.settings.vnext[0].address = rootAddress;
+              if (o.settings?.vnext?.[0]?.users?.[0] && !o.settings.vnext[0].users[0].id && rootId) o.settings.vnext[0].users[0].id = rootId;
+              if (o.streamSettings?.realitySettings && cfg.outbounds[0].streamSettings?.realitySettings?.spiderX) o.streamSettings.realitySettings.spiderX = cfg.outbounds[0].streamSettings.realitySettings.spiderX;
+              buildURLFromOutbound(o, obj.remarks, urls);
+            });
+            return true;
+          }
+        } catch { }
+        return false;
+      }
+
+
+      function handleJunkConfig(obj, urls) {
+        if (obj.configType === 'SHADOWSOCKS' && obj.method && obj.password && obj.server && obj.serverPort) {
+          const a = btoa(`${obj.method}:${obj.password}`).replace(/=+$/, ''), tag = encodeURIComponent(obj.remarks || '');
+          urls.push(`ss://${a}@${obj.server}:${obj.serverPort}#${tag}`);
+          return true;
+        }
+        if (obj.configType === 'VLESS' && obj.password && obj.server && obj.serverPort) {
+          const params = new URLSearchParams();
+          params.set('encryption', obj.method || 'none');
+          params.set('security', obj.security || '');
+          if (obj.flow) params.set('flow', obj.flow);
+          if (obj.network) params.set('type', obj.network);
+          if (obj.headerType) params.set('headerType', obj.headerType);
+          if (obj.host) params.set('host', obj.host);
+          if (obj.path) params.set('path', obj.path);
+          if (obj.sni) params.set('sni', obj.sni);
+          if (obj.fingerPrint) params.set('fp', obj.fingerPrint);
+          if (obj.alpn) params.set('alpn', Array.isArray(obj.alpn) ? obj.alpn.join(',') : obj.alpn);
+          if (obj.publicKey) params.set('pbk', obj.publicKey);
+          if (obj.shortId) params.set('sid', obj.shortId);
+
+          // <<< ДОБАВЛЕНО: сохраняем serviceName, если он есть (и поддерживаем альтернативные ключи)
+          const svc = obj.serviceName || obj.service_name || obj.service;
+          if (svc) params.set('serviceName', svc);
+
+          if (obj.allowInsecure !== undefined) params.set('allowInsecure', obj.allowInsecure ? '1' : '0');
+          const tag = encodeURIComponent(obj.remarks || '');
+          urls.push(`vless://${obj.password}@${obj.server}:${obj.serverPort}?${params.toString()}#${tag}`);
+          return true;
+        }
+        return false;
+      }
+
+
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const inEl = document.getElementById('inputConfig'),
+          outEl = document.getElementById('outputResult'),
+          filterInput = document.getElementById('filterInput'),
+          btnFilter = document.getElementById('btnFilter'),
+          ipGeoToggle = document.getElementById('ipGeoToggle'),
+          spinner = document.getElementById('spinner'),
+          statusEl = document.getElementById('processStatus'),
+          btnCountry = document.getElementById('btnCountry'),
+          btnPing = document.getElementById('btnPing'),
+          countryPopup = document.getElementById('countryPopup'),
+          fileInput = document.getElementById('fileInput'),
+          hiddenDownloadLink = document.getElementById('hiddenDownloadLink'),
+          btnSettingsLocal = document.getElementById('btnSettings'),
+          settingsModalLocal = document.getElementById('settingsModal'),
+          closeSettingsLocal = document.getElementById('closeSettings'),
+          btnClearInput = document.getElementById('btnClearInput'),
+          btnClearOutput = document.getElementById('btnClearOutput');
+
+        let selectedCountry = 'OFF';
+        let ipWsToggled = false;
+
+        function initCountryPopup() {
+          countryPopup.innerHTML = '';
+          const container = document.createElement('div');
+          container.className = 'search-container';
+          const searchEl = document.createElement('input');
+          searchEl.type = 'text';
+          searchEl.placeholder = 'Поиск…';
+          container.appendChild(searchEl);
+          countryPopup.appendChild(container);
+          const listEl = document.createElement('div');
+          listEl.className = 'country-list';
+          countryPopup.appendChild(listEl);
+          searchEl.addEventListener('input', () => filterCountries(searchEl.value, listEl));
+          filterCountries('', listEl);
+        }
+
+
+        function filterCountries(term, listEl) {
+          const lower = (term || '').toLowerCase();
+          listEl.innerHTML = '';
+          countries.forEach(c => {
+            const matchName = !lower || c.name.toLowerCase().startsWith(lower);
+            const encodedFlag = encodeURIComponent(c.flag);
+            const matchFlag = (term || '').includes(c.flag) || (term || '').includes(encodedFlag);
+            if (matchName || matchFlag) {
+              const item = document.createElement('div');
+              item.className = 'country-item';
+              item.innerHTML = `<span>${c.flag}</span><span>${c.name}</span>`;
+              item.onclick = () => {
+                // Если в списке выбран пункт "ОТКЛ" (он же в countries[0]), то используем значение 'OFF'
+                // чтобы логика фильтрации, где проверяется selectedCountry === 'OFF', продолжала работать.
+                const up = (c.name || '').toString().toUpperCase();
+                if (up === 'ОТКЛ' || up === 'OFF') {
+                  selectedCountry = 'OFF';
+                  btnCountry.textContent = '🌎';
                 } else {
+                  selectedCountry = c.flag;
+                  btnCountry.textContent = c.flag;
+                }
+                countryPopup.style.display = 'none';
+              };
+              listEl.appendChild(item);
+            }
+          });
+        }
+
+        btnCountry.addEventListener('click', e => {
+          e.stopPropagation();
+          countryPopup.style.display = countryPopup.style.display === 'block' ? 'none' : 'block';
+          if (countryPopup.style.display === 'block') initCountryPopup();
+        });
+        document.addEventListener('click', () => {
+          if (countryPopup.style.display === 'block') countryPopup.style.display = 'none';
+        });
+        countryPopup.addEventListener('click', e => e.stopPropagation());
+
+        function setStatus(html, spinning) {
+          statusEl.innerHTML = html;
+          spinner.style.display = spinning ? 'inline-block' : 'none';
+        }
+
+
+        const tcpBaseline = 99;
+        const httpBaseline = 999;
+        const httpFactor = tcpBaseline / httpBaseline;
+
+        async function pingHost(host) {
+          const timeoutMs = 5000;
+          const start = performance.now();
+          const proto = location.protocol === 'https:' ? 'https:' : 'http:';
+          try {
+            await Promise.race([
+              fetch(`${proto}//${host}`, { mode: 'no-cors' }),
+              new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs))
+            ]);
+            const duration = Math.round(performance.now() - start);
+            const adjusted = Math.round(duration * httpFactor);
+            return { host, time: adjusted, status: `🔘 ${adjusted}ms` };
+          } catch {
+            return { host, time: Infinity, status: '❌ тайм-аут' };
+          }
+        }
+
+        let pinging = false, resultsPing = [];
+        async function pingAll() {
+          pinging = true;
+          resultsPing = [];
+          // ... остальной код ...
+
+          const lines = inEl.value.split(/\r?\n/).filter(Boolean), total = lines.length;
+          for (let i = 0; i < total; i++) {
+            if (!pinging) break;
+            let host;
+            try { host = new URL(lines[i]).hostname; }
+            catch { const m = lines[i].match(/\/\/([^\/:]+)/); host = m ? m[1] : lines[i]; }
+            const res = await pingHost(host);
+            resultsPing.push({ ...res, original: lines[i] });
+            setStatus(`пинг… ${Math.round(resultsPing.length / total * 100)}%`, true);
+            const sorted = resultsPing.slice().sort((a, b) => a.time - b.time);
+            outEl.value = sorted.map(r => `${r.original} ${r.status}`).join('\n');
+          }
+          setStatus('готово!', false); pinging = false;
+        }
+
+        btnPing.onclick = () => pinging ? (pinging = false, setStatus('', false)) : pingAll();
+
+        btnFilter.onclick = async () => {
+          const raw = inEl.value.trim(),
+            filterVal = filterInput.value.trim();
+
+
+          if (filterInput.value.trim().match(/^https?:\/\//)) {
+            const urls = filterInput.value.trim().split(/\s+/);
+            const downloaded = [];
+            setStatus('загрузка...<br>0%', true);
+            for (let i = 0; i < urls.length; i++) {
+              let txt = '';
+              try {
+                const resp = await fetch(urls[i]);
+                txt = resp.ok ? await resp.text() : '';
+              } catch {
+                const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(urls[i]);
+                const resp2 = await fetch(proxy);
+                txt = resp2.ok ? await resp2.text() : '';
+              }
+              const b64 = txt.trim().replace(/\s+/g, '');
+              if (/^[A-Za-z0-9+/=]+$/.test(b64) && b64.length % 4 === 0) {
+                try { txt = atob(b64); } catch { }
+              }
+              downloaded.push(txt);
+              setStatus(`загрузка...<br>${Math.round((i + 1) / urls.length * 100)}%`, true);
+            }
+            inEl.value = downloaded.join('\n');
+            setStatus('готово!', false);
+            return;
+          }
+
+
+          btnFilter.disabled = true; setStatus('запуск...<br>0%', true);
+          const rawLines = inEl.value.split(/\r?\n/).filter(Boolean), results = [];
+
+          if (ipGeoToggle.checked) {
+            const seen = {};
+            for (let i = 0; i < rawLines.length; i++) {
+              const line = rawLines[i].trim();
+              let host;
+              try { host = new URL(line).hostname; }
+              catch { host = (line.match(/\/\/([^\/:]+)/) || [])[1] || line; }
+              if (!seen[host]) {
+                try {
+                  const res = await fetch(buildGeoUrl(host));
+                  const d = await res.json();
+                  const code = (d.country_code || d.countryCode || d.code || d.geoplugin_countryCode || d.country || '').toUpperCase();
+                  let name = d.country_name || d.countryName || d.geoplugin_countryName || d.country || host;
+                  if (code) {
+                    const isShort = name.length <= 3 || name.toUpperCase() === code;
+                    if (isShort) {
+                      const flag = countryCodeToFlag(code);
+                      const entry = countries.find(c => c.flag === flag);
+                      if (entry) name = entry.name;
+                    }
+                    seen[host] = `${countryCodeToFlag(code)} ${name}`;
+                  } else {
+                    seen[host] = host;
+                  }
+                } catch {
                   seen[host] = host;
                 }
-              } catch {
-                seen[host] = host;
               }
+              results.push(`${line.split('#')[0]}#${seen[host]}`);
+              setStatus(`обработка...<br>${Math.round((i + 1) / rawLines.length * 100)}%`, true);
             }
-            results.push(`${line.split('#')[0]}#${seen[host]}`);
-            setStatus(`обработка...<br>${Math.round((i + 1) / rawLines.length * 100)}%`, true);
-          }
-        } else {
-          for (let i = 0; i < rawLines.length; i++) {
-            const line = rawLines[i].trim();
-            let decoded;
+          } else {
 
-            if (line.startsWith('vmess://')) {
-              decoded = decodeVmessBase64(line);
-            } else {
-              try {
-                decoded = decodeURIComponent(line);
-              } catch {
-                decoded = line;
+            for (let i = 0; i < rawLines.length; i++) {
+              const line = rawLines[i].trim();
+
+              // Декодирование vmess только через существующую функцию — НЕ выполняем decodeURIComponent на всём URL,
+              // чтобы не ломать записи с %-encoded частями (hysteria, host и т.д.).
+
+              let decoded = line;
+              if (line.startsWith('vmess://')) {
+                decoded = decodeVmessBase64(line);
               }
-            }
 
-if (line.startsWith('vmess://')) {
-  const tmp = decodeVmessBase64(line);
-  try {
-    decoded = decodeURIComponent(tmp);
-  } catch {
-    decoded = tmp;
-  }
-} else {
-  // … ваша старая логика …
-}
-
-            const term = filterVal.toLowerCase();
-            const okText = !term || decoded.toLowerCase().includes(term) || rawLines[i].toLowerCase().includes(term);
-            const okCountry = selectedCountry === 'OFF'
-                              || decoded.includes(selectedCountry)
-                              || rawLines[i].includes(selectedCountry);
-            if (okText && okCountry) {
-              results.push(decoded);
-            }
-            setStatus(`обработка...<br>${Math.round((i + 1) / rawLines.length * 100)}%`, true);
-          }
-        }
-
-        outEl.value = results.join('\n');
-        setStatus('готово!', false);
-        btnFilter.disabled = false;
-      };
-
-      
-      
-      
-      /**
- * Возвращает значение из вложенного объекта по пути, или undefined.
- */
-function getNested(obj, path) {
-  return path.reduce((acc, key) =>
-    (acc != null ? acc[key] : undefined)
-  , obj);
-}
-
-/**
- * Собирает все стандартные параметры из settings/streamSettings/reality/grpc и т.п.
- */
-function extractParams(baseObj, params) {
-  const mapping = {
-    encryption:    ['settings','vnext',0,'users',0,'encryption'],
-    flow:          ['settings','vnext',0,'users',0,'flow'],
-    security:      ['streamSettings','security'],
-    // TLS
-    allowInsecure: ['streamSettings','tlsSettings','allowInsecure'],
-    alpn:          ['streamSettings','tlsSettings','alpn'],
-    fp:            ['streamSettings','tlsSettings','fingerprint'],
-    // Reality
-    pbk:           ['streamSettings','realitySettings','publicKey'],
-    sid:           ['streamSettings','realitySettings','shortId'],
-    seed:          ['streamSettings','kcpSettings','seed'],
-    // transport
-    type:          ['streamSettings','network'],
-    host:          ['streamSettings','wsSettings','headers','Host'],
-    path:          ['streamSettings','wsSettings','path'],
-    // GRPC
-    serviceName:   ['streamSettings','grpcSettings','serviceName'],
-    // Shadowsocks-only
-    ota:           ['settings','servers',0,'ota']
-  };
-
-  // Общие сборщики
-  for (const [key, path] of Object.entries(mapping)) {
-    let v = getNested(baseObj, path);
-    if (v != null && v !== '') {
-      if (Array.isArray(v)) v = v.join(',');
-      if (typeof v === 'boolean') v = v ? '1' : '0';
-      params.set(key, v);
-    }
-  }
-
-  // Дополнительный sni: сначала TLS, а если нет — Reality
-  const tlsSni = getNested(baseObj, ['streamSettings','tlsSettings','serverName']);
-  const relSni = getNested(baseObj, ['streamSettings','realitySettings','serverName']);
-  if (tlsSni) params.set('sni', tlsSni);
-  else if (relSni) params.set('sni', relSni);
-}
-
-/**
- * Обработчик «мусорного» VLESS
- */
-function handleGarbageVless(obj, urls) {
-  if (obj.b !== 'VLESS' || !obj.f || obj.f.protocol !== 'vless') return false;
-  const bean = getNested(obj, ['f','settings','vnext',0]);
-  const user = bean?.users?.[0];
-  if (!bean || !user || !user.id) return false;
-
-  const address = bean.address;
-  const port    = bean.port;
-  const params  = new URLSearchParams();
-
-  extractParams(obj.f, params);
-
-  const tag = encodeURIComponent(obj.e || obj.tag || '');
-  urls.push(`vless://${user.id}@${address}:${port}?${params.toString()}#${tag}`);
-  return true;
-}
-
-/**
- * Обработчик «мусорного» SHADOWSOCKS
- */
-function handleGarbageShadowsocks(obj, urls) {
-  if (obj.b !== 'SHADOWSOCKS' || !obj.f || !Array.isArray(obj.f.settings?.servers)) return false;
-  const server = obj.f.settings.servers[0];
-  if (!server.address || !server.method || !server.password || !server.port) return false;
-
-  const params = new URLSearchParams();
-  extractParams(obj.f, params);
-
-  const auth = btoa(`${server.method}:${server.password}`).replace(/=+$/, '');
-  let url  = `ss://${auth}@${server.address}:${server.port}`;
-  const qs = params.toString();
-  if (qs) url += `?${qs}`;
-  if (obj.e) url += `#${encodeURIComponent(obj.e)}`;
-
-  urls.push(url);
-  return true;
-}
-
- function handleSingBoxOutbounds(obj, urls) {
-  if (
-    typeof obj !== 'object' ||
-    !obj.log ||
-    !obj.dns ||
-    !Array.isArray(obj.inbounds) ||
-    !Array.isArray(obj.outbounds) ||
-    !obj.route
-  ) return false;
-
-  obj.outbounds.forEach(o => {
-    let url;
-
-    if (o.type === 'vless' && o.uuid && o.server && o.server_port) {
-      const p = new URLSearchParams();
-      if (o.flow)                         p.set('flow', o.flow);
-      if (o.transport?.type)             p.set('type', o.transport.type);
-      if (o.tls?.enabled) {
-        p.set('security', o.tls.reality?.enabled ? 'reality' : 'tls');
-        if (o.tls.server_name)           p.set('sni', o.tls.server_name);
-        if (o.tls.utls?.fingerprint)     p.set('fp', o.tls.utls.fingerprint);
-        if (o.tls.reality?.enabled) {
-          p.set('pbk', o.tls.reality.public_key);
-          p.set('sid', o.tls.reality.short_id);
-        }
-      }
-      if (o.transport?.type === 'grpc' && o.transport.service_name) {
-        p.set('serviceName', o.transport.service_name);
-      }
-      url = `vless://${o.uuid}@${o.server}:${o.server_port}` +
-            (p.toString() ? `?${p.toString()}` : '') +
-            `#${encodeURIComponent(o.tag||'')}`;
-    }
-    else if (o.type === 'shadowsocks' && o.server && o.server_port && o.method && o.password) {
-      const auth = btoa(`${o.method}:${o.password}`).replace(/=+$/, '');
-      const p = new URLSearchParams();
-      if (o.ota !== undefined)          p.set('ota', o.ota ? '1' : '0');
-      url = `ss://${auth}@${o.server}:${o.server_port}` +
-            (p.toString() ? `?${p.toString()}` : '') +
-            `#${encodeURIComponent(o.tag||'')}`;
-    }
-    else if (o.type === 'trojan' && o.password && o.server && o.server_port) {
-      const p = new URLSearchParams();
-      if (o.tls?.server_name)           p.set('sni', o.tls.server_name);
-      url = `trojan://${encodeURIComponent(o.password)}@${o.server}:${o.server_port}` +
-            (p.toString() ? `?${p.toString()}` : '') +
-            `#${encodeURIComponent(o.tag||'')}`;
-    }
-
-    if (url) urls.push(url);
-  });
-
-  return true;
-}
- 
- 
-document.getElementById('btnConvert').onclick = () => {
-  let raw = inEl.value;
-  const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
-  if (f !== -1 && l > f) raw = raw.slice(f, l + 1);
-  if (!raw.trim()) {
-    outEl.value = 'отсутствует json';
-    return;
-  }
-
-  const objs = extractAllJSON(raw), urls = [];
-  objs.forEach(obj => {
-    if (handleSingBoxOutbounds(obj, urls))      return;
-    if (handleGarbageVless(obj, urls))          return;
-    if (handleGarbageShadowsocks(obj, urls))    return;
-    if (handleSpecialJunkConfig(obj, urls))     return;
-    if (handleJunkConfig(obj, urls))            return;
-    if (obj.configType === 'VLESS' &&
-        obj.customConfig && obj.password && obj.server) {
-      buildURLFromLegacy(obj, urls);
-      return;
-    }
-    if (obj.outboundBean) {
-      buildURLsFromOutboundBean(obj, urls);
-      return;
-    }
-    if (obj.custom_json &&
-        Array.isArray(obj.custom_json.outbounds)) {
-      buildURLsFromCustomJSON(obj, urls);
-      return;
-    }
-    if (obj.server && obj.method &&
-        obj.password && obj.server_port) {
-      const a = btoa(`${obj.method}:${obj.password}`).replace(/=+$/, '');
-      let u = `ss://${a}@${obj.server}:${obj.server_port}`;
-      if (obj.remarks) u += `#${encodeURIComponent(obj.remarks)}`;
-      urls.push(u);
-      return;
-    }
-    if (obj.configType === 'VLESS' &&
-        obj.security === 'reality' &&
-        obj.server) {
-      const p = new URLSearchParams();
-      p.set('encryption', obj.method || 'none');
-      p.set('security', obj.security);
-      if (obj.flow)         p.set('flow', obj.flow);
-      if (obj.alpn)         p.set('alpn', Array.isArray(obj.alpn) ? obj.alpn.join(',') : obj.alpn);
-      p.set('allowInsecure', obj.insecure ? '1' : '0');
-      p.set('type',         obj.network || '');
-      if (obj.sni)          p.set('sni', obj.sni);
-      if (obj.fingerPrint)  p.set('fp', obj.fingerPrint);
-      if (obj.publicKey)    p.set('pbk', obj.publicKey);
-      if (obj.shortId)      p.set('sid', obj.shortId);
-      if (obj.serviceName)  p.set('serviceName', obj.serviceName);
-      const t = obj.remarks ? encodeURIComponent(obj.remarks) : '';
-      urls.push(`vless://${obj.password}@${obj.server}:${obj.serverPort}?${p.toString()}#${t}`);
-      return;
-    }
-    (obj.outbounds || obj.fullConfig?.outbounds || []).forEach(o =>
-      buildURLFromOutbound(o, obj.remarks, urls)
-    );
-  });
-  outEl.value = urls.join('\n');
-};
-
-      document.getElementById('btnConvertBack').onclick = () => {
-        const raw = inEl.value.trim();
-        if (!raw) { outEl.value = 'отсутствует url'; return; }
-        const lines = raw.split(/\r?\n/).filter(Boolean);
-        const unified = [];
-        lines.forEach(line => {
-          (function parseLine(l) {
-            if (l.startsWith('ss://')) {
-  const [main, hash] = l.slice(5).split('#');
-  const tag = hash ? decodeURIComponent(hash) : '';
-  const [auth, hp] = main.split('@');
-  const [method, password] = atob(auth).split(':');
-  // Обрезаем всё после ? перед разбором адреса и порта
-  const hostport = hp.split('?')[0];
-  const [address, portStr] = hostport.split(':');
-  const port = +portStr;
-  unified.push({
-    protocol: 'shadowsocks',
-    tag,
-    settings: { servers: [{ address, port, method, password }] },
-    streamSettings: { network: 'tcp', security: 'none', tcpSettings: {} }
-  });
-  return;
-}
-
-            if (l.startsWith('wireguard://')) {
-              const obj = parseWireguardURL(l);
-              if (obj) unified.push(obj);
-              return;
-            }
-
-            if (l.startsWith('hysteria2://')) {
-              try {
-                const u = new URL(l);
-                const password = decodeURIComponent(u.username);
-                const [host,port] = u.host.split(':');
-                const p = u.searchParams;
-                const insecure = p.get('insecure') === '1';
-                const sni = p.get('sni') || '';
-                unified.push({
-                  protocol:'hysteria2',
-                  tag: u.hash ? decodeURIComponent(u.hash.slice(1)) : 'hysteria2',
-                  settings:{ servers:[{ address:host, port:parseInt(port,10) }] },
-                  streamSettings:{
-                    network:'hysteria2', security:'tls',
-                    hy2Settings:{ password, use_udp_extension:insecure, congestion:{ down_mbps:0, up_mbps:0 } },
-                    tlsSettings:{ allowInsecure:insecure, serverName:sni }
-                  },
-                  domainStrategy:'AsIs'
-                });
-              } catch{}
-              return;
-            }
-
-            try {
-              const u = new URL(l);
-              const p = u.searchParams;
-              const proto = u.protocol.slice(0,-1);
-              const tag = decodeURIComponent(u.hash.slice(1)) || proto;
-              const typeParam = p.get('type') || 'tcp';
-              const headerType = p.get('headerType') || '';
-              const h = p.get('host') || '';
-              const path = p.get('path') || '';
-              const flow = p.get('flow') || '';
-              const seed = p.get('seed') || '';
-              const serviceName = p.get('serviceName') || '';
-              const ssConf = {
-                network: typeParam === 'xhttp' ? 'splithttp' : typeParam,
-                security: p.get('security') || '',
-                packetEncoding: p.get('packetEncoding') || '',
-                tlsSettings: {
-                  serverName: p.get('sni') || '',
-                  allowInsecure: p.get('allowInsecure') === '1',
-                  fingerprint: p.get('fp') || '',
-                  alpn: p.get('alpn') ? p.get('alpn').split(',') : []
-                },
-                realitySettings: { publicKey: p.get('pbk') || '', shortId: p.get('sid') || '', serverName: p.get('sni') || '' },
-                kcpSettings: { seed: seed },
-                grpcSettings: { serviceName: serviceName },
-                tcpSettings: headerType==='http'?{ header:{ type:'http', request:{ headers:{ Host:[h] }, path:[path] } } }:undefined,
-                httpSettings: typeParam==='http'?{ host:[h], path }:undefined,
-                splithttpSettings: typeParam==='xhttp'?{ host:h, path }:undefined,
-                httpupgradeSettings: typeParam==='httpupgrade'?{ host:h, path }:undefined,
-                wsSettings: typeParam==='ws'&&h?{ headers:{ Host:h }, path }:undefined
-              };
-         
-          if (proto === 'trojan') {
-            ssConf.security     = p.get('security') || 'tls';
-            ssConf.tlsSettings  = ssConf.tlsSettings || {};
-            if (p.get('allowInsecure') === '1') ssConf.tlsSettings.allowInsecure = true;
-            const sni = p.get('sni');
-            if (sni) ssConf.tlsSettings.serverName = sni;
-          }
-    
-              if (proto==='vless') unified.push({ protocol:'vless', tag, settings:{ vnext:[{ address:u.hostname, port:+u.port, users:[{ id:u.username, encryption:p.get('encryption')||'none', flow, serviceName }] }] }, streamSettings:ssConf });
-              if (proto==='vmess') unified.push({ protocol:'vmess', tag, settings:{ vnext:[{ address:u.hostname, port:+u.port, users:[{ id:u.username, security:p.get('encryption')||'auto' }] }] }, streamSettings:ssConf });
-              if (proto==='trojan') {
-                const pwd = decodeURIComponent(u.username), host2 = u.hostname, port2=+u.port;
-                unified.push({ protocol:'trojan', tag, settings:{ servers:[{ address:host2, port:port2, password:pwd }] }, streamSettings:ssConf });
+              // Безопасная функция decodeURIComponent
+              function decodeSafe(s) {
+                try { return decodeURIComponent(s); } catch { return s; }
               }
-            } catch {}
-          })(line);
-        });
 
-        const config = {
-          dns:{ fallbackStrategy:'disabledIfAnyMatch', servers:[{ address:'8.8.8.8', queryStrategy:'UseIP' }] },
-          inbounds:[
-            { listen:'0.0.0.0', port:10805, protocol:'socks', settings:{ auth:'noauth', udp:true }, tag:'socks' },
-            { listen:'0.0.0.0', port:1080, protocol:'http', settings:{ allowTransparent:true }, tag:'http' },
-            { listen:'0.0.0.0', port:10804, protocol:'dokodemo-door', settings:{ address:'0.0.0.0', network:'tcp,udp', port:10804 }, tag:'dns-in' }
-          ],
-          log:{ loglevel:'warning' },
-          outbounds:unified,
-          policy:{ levels:{ '1':{ connIdle:30 } }, system:{ statsOutboundDownlink:true, statsOutboundUplink:true } },
-          routing:{ domainStrategy:'AsIs', rules:[{ inboundTag:['dns-in'], outboundTag:'dns-out', type:'field' }] },
-          stats:{}
+              // Собираем варианты строк для поиска (оригинал, декодированный, encoded)
+              const rawVariants = [line, decodeSafe(line), encodeURIComponent(line)].filter(Boolean);
+              const decVariants = [decoded, decodeSafe(decoded), encodeURIComponent(decoded)].filter(Boolean);
+
+              const term = (filterVal || '').trim();
+              const termLower = term.toLowerCase();
+              const termEnc = encodeURIComponent(term);
+
+              // Поиск текста: проверяем разные варианты (чтобы найти эмоджи и их %-кодировку)
+              let okText = false;
+              if (!term) okText = true;
+              else {
+                okText = rawVariants.some(v => v.toString().toLowerCase().includes(termLower))
+                  || decVariants.some(v => v.toString().toLowerCase().includes(termLower))
+                  || rawVariants.some(v => v.toString().includes(term))
+                  || rawVariants.some(v => v.toString().includes(termEnc));
+              }
+
+              // Фильтр по стране: значение 'OFF' означает выключен (как в старой логике)
+              let okCountry = false;
+              if (!selectedCountry || selectedCountry === 'OFF') okCountry = true;
+              else {
+                const scEnc = encodeURIComponent(selectedCountry);
+                okCountry = rawVariants.some(v => v.toString().includes(selectedCountry) || v.toString().includes(scEnc))
+                  || decVariants.some(v => v.toString().includes(selectedCountry));
+              }
+
+              if (okText && okCountry) {
+                results.push(decoded);
+              }
+
+              setStatus(`обработка...<br>${Math.round((i + 1) / rawLines.length * 100)}%`, true);
+            }
+          }
+
+          outEl.value = results.join('\n');
+          setStatus('готово!', false);
+          btnFilter.disabled = false;
         };
 
-        outEl.value = JSON.stringify(config,null,2);
-      };
 
-      document.getElementById('btnTextBase64').onclick = () => {
-        const t = inEl.value.trim();
-        if (!t) { outEl.value = 'отсутствует текст'; return; }
-        try { outEl.value = decodeURIComponent(escape(atob(t))); }
-        catch { outEl.value = btoa(unescape(encodeURIComponent(t))); }
-      };
 
-      document.getElementById('btnCopy').onclick = () => {
-        const text = outEl.value;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(() => alert('Скопировано!')).catch(fallback);
-        } else fallback();
-        function fallback() {
-          const ta = document.createElement('textarea');
-          ta.value = text; ta.setAttribute('wrap','off');
-          ta.style.position = 'absolute'; ta.style.left='-9999px';
-          document.body.appendChild(ta);
-          ta.select(); ta.setSelectionRange(0,ta.value.length);
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          alert('Скопировано!');
+
+        /**
+   * Возвращает значение из вложенного объекта по пути, или undefined.
+   */
+        function getNested(obj, path) {
+          return path.reduce((acc, key) =>
+            (acc != null ? acc[key] : undefined)
+            , obj);
         }
-      };
 
-      document.getElementById('btnDownload').onclick = () => {
-        const d = outEl.value.trim();
-        if (!d) return alert('Нет данных');
-        const link = hiddenDownloadLink;
-        link.href = URL.createObjectURL(new Blob([d],{type:'text/plain'}));
-        link.download='result.txt'; link.click();
-        setTimeout(()=>URL.revokeObjectURL(link.href),1000);
-      };
+        /**
+         * Собирает все стандартные параметры из settings/streamSettings/reality/grpc и т.п.
+         */
+        function extractParams(baseObj, params) {
+          const mapping = {
+            encryption: ['settings', 'vnext', 0, 'users', 0, 'encryption'],
+            flow: ['settings', 'vnext', 0, 'users', 0, 'flow'],
+            security: ['streamSettings', 'security'],
+            // TLS
+            allowInsecure: ['streamSettings', 'tlsSettings', 'allowInsecure'],
+            alpn: ['streamSettings', 'tlsSettings', 'alpn'],
+            fp: ['streamSettings', 'tlsSettings', 'fingerprint'],
+            // Reality
+            pbk: ['streamSettings', 'realitySettings', 'publicKey'],
+            sid: ['streamSettings', 'realitySettings', 'shortId'],
+            seed: ['streamSettings', 'kcpSettings', 'seed'],
+            // transport
+            type: ['streamSettings', 'network'],
+            host: ['streamSettings', 'wsSettings', 'headers', 'Host'],
+            path: ['streamSettings', 'wsSettings', 'path'],
+            // GRPC
+            serviceName: ['streamSettings', 'grpcSettings', 'serviceName'],
+            // Shadowsocks-only
+            ota: ['settings', 'servers', 0, 'ota']
+          };
 
-      document.getElementById('btnLoadFile').onclick = () => fileInput.click();
-      fileInput.onchange = e => {
-        const fr = new FileReader();
-        fr.onload = () => inEl.value = fr.result;
-        fr.readAsText(e.target.files[0]);
-      };
-
-      btnClearInput.addEventListener('click', () => { inEl.value = ''; });
-      btnClearOutput.addEventListener('click', () => { outEl.value = ''; });
-
-      btnSettingsLocal.addEventListener('click', () => { settingsModalLocal.style.display='flex'; });
-      closeSettingsLocal.addEventListener('click', () => { settingsModalLocal.style.display='none'; });
-
-      function applyReplacement(regex, replacement) {
-        const lines = inEl.value.split(/\r?\n/);
-        outEl.value = lines.map(l=>l.replace(regex,replacement)).join('\n');
-      }
-
-      
-  // … ваш остальной код …
-
-  document.getElementById('btnReplaceWsHost').addEventListener('click', () => {
-    const newHost = document.getElementById('replaceWsHostInput').value.trim();
-    const lines = inEl.value.trim().split(/\r?\n/);
-    const updated = lines.map(l => {
-      try {
-        const u = new URL(l);
-        u.searchParams.set('host', newHost);
-        return u.toString();
-      } catch {
-        return l;
-      }
-    });
-    inEl.value = updated.join('\n');
-    settingsModalLocal.style.display = 'none';
-    btnFilter.click();
-  });
-
-  document.getElementById('btnReplaceSni').addEventListener('click', () => {
-    const newSni = document.getElementById('replaceSniInput').value.trim();
-    const lines = inEl.value.trim().split(/\r?\n/);
-    const updated = lines.map(l => {
-      try {
-        const u = new URL(l);
-        u.searchParams.set('sni', newSni);
-        return u.toString();
-      } catch {
-        return l;
-      }
-    });
-    inEl.value = updated.join('\n');
-    settingsModalLocal.style.display = 'none';
-    btnFilter.click();
-  });
-
-  document.getElementById('btnReplaceName').addEventListener('click', () => {
-  const newName = encodeURIComponent(
-    document.getElementById('replaceNameInput').value.trim()
-  );
-  const lines = inEl.value.trim().split(/\r?\n/);
-  const updated = lines.map(l => {
-    try {
-      const u = new URL(l);
-      // Всегда ставим новый хэш, заменяя старый или добавляя его, если хэша не было
-      u.hash = `#${newName}`;
-      return u.toString();
-    } catch {
-      return l;
-    }
-  });
-  inEl.value = updated.join('\n');
-  settingsModalLocal.style.display = 'none';
-  btnFilter.click();
-});
-
-;(function(){
-  const btn = document.getElementById('ipWsToggle');
-  let toggled = false, orig = '', mod = '';
-  btn.addEventListener('click', () => {
-    orig = orig || inEl.value.trim();
-    try {
-      const parsed = JSON.parse(orig);
-      parsed.outbounds.forEach(o => {
-        const ws = o.streamSettings?.wsSettings?.headers?.Host
-                || o.streamSettings?.httpSettings?.host?.[0]
-                || o.streamSettings?.splithttpSettings?.host || '';
-        if (ws) {
-          if (o.settings?.vnext?.[0]) {
-            o._orig = o.settings.vnext[0].address;
-            o.settings.vnext[0].address = ws;
-          } else if (o.settings?.servers?.[0]) {
-            o._orig = o.settings.servers[0].address;
-            o.settings.servers[0].address = ws;
+          // Общие сборщики
+          for (const [key, path] of Object.entries(mapping)) {
+            let v = getNested(baseObj, path);
+            if (v != null && v !== '') {
+              if (Array.isArray(v)) v = v.join(',');
+              if (typeof v === 'boolean') v = v ? '1' : '0';
+              params.set(key, v);
+            }
           }
+
+          // Дополнительный sni: сначала TLS, а если нет — Reality
+          const tlsSni = getNested(baseObj, ['streamSettings', 'tlsSettings', 'serverName']);
+          const relSni = getNested(baseObj, ['streamSettings', 'realitySettings', 'serverName']);
+          if (tlsSni) params.set('sni', tlsSni);
+          else if (relSni) params.set('sni', relSni);
         }
+
+        /**
+         * Обработчик «мусорного» VLESS
+         */
+        function handleGarbageVless(obj, urls) {
+          if (obj.b !== 'VLESS' || !obj.f || obj.f.protocol !== 'vless') return false;
+          const bean = getNested(obj, ['f', 'settings', 'vnext', 0]);
+          const user = bean?.users?.[0];
+          if (!bean || !user || !user.id) return false;
+
+          const address = bean.address;
+          const port = bean.port;
+          const params = new URLSearchParams();
+
+          extractParams(obj.f, params);
+
+          const tag = encodeURIComponent(obj.e || obj.tag || '');
+          urls.push(`vless://${user.id}@${address}:${port}?${params.toString()}#${tag}`);
+          return true;
+        }
+
+        /**
+        * Обработчик «мусорного» SHADOWSOCKS
+        */
+        function handleGarbageShadowsocks(obj, urls) {
+          if (obj.b !== 'SHADOWSOCKS' || !obj.f || !Array.isArray(obj.f.settings?.servers)) return false;
+          const server = obj.f.settings.servers[0];
+          if (!server.address || !server.method || !server.password || !server.port) return false;
+          const params = new URLSearchParams();
+          extractParams(obj.f, params);
+          const auth = btoa(`${server.method}:${server.password}`).replace(/=+$/, '');
+          let url = `ss://${auth}@${server.address}:${server.port}`;
+          const qs = params.toString();
+          if (qs) url += `?${qs}`;
+          if (obj.e) url += `#${encodeURIComponent(obj.e)}`;
+          urls.push(url);
+          return true;
+        }
+        function handleGarbageShadowsocksAlt(obj, urls) {
+          if (!obj || !Array.isArray(obj.credentials)) return false;
+          const cred = obj.credentials.find(c => {
+            const proto = (c.protocol || '').toString().toLowerCase();
+            return proto === 'shadowsocks' || (c.method && c.password && c.port);
+          });
+          if (!cred) return false;
+          const host = (obj.address || obj.ip || obj.server || '').toString();
+          const port = (cred.port || obj.port || '').toString();
+          const method = cred.method || cred.methodName || '';
+          const password = cred.password || '';
+          if (!host || !port || !method || !password) return false;
+          const params = new URLSearchParams();
+          if (cred.ota !== undefined) params.set('ota', cred.ota ? '1' : '0');
+          if (obj.f && typeof obj.f === 'object') {
+            const tmp = new URLSearchParams();
+            try { extractParams(obj.f, tmp); } catch { }
+            for (const [k, v] of tmp.entries()) if (!params.has(k)) params.set(k, v);
+          }
+          const tag = (obj.title || obj.city || obj.remarks || obj.e || obj.tag || '').toString();
+          const auth = btoa(`${method}:${password}`).replace(/=+$/, '');
+          let url = `ss://${auth}@${host}:${port}`;
+          const qs = params.toString();
+          if (qs) url += `?${qs}`;
+          if (tag) url += `#${encodeURIComponent(tag)}`;
+          urls.push(url);
+          return true;
+        }
+
+        /**
+         * Обработчик простых/нестандартных Hysteria объектов
+         * Поддерживает топ-левел и вложенные формы, где поля: server/server_port/password/tls/type
+         */
+        function handleSimpleHysteria(obj, urls) {
+          if (!obj) return false;
+          const type = (obj.type || obj.configType || '').toString().toLowerCase();
+          if (!(type === 'hysteria2' || type === 'hysteria' || type === 'hysteria-2' || type === 'hysteria2')) return false;
+
+          const host = obj.server || obj.address || obj.host;
+          const port = obj.server_port || obj.port;
+          const password = (obj.password || obj.pwd || obj.pass || '').toString();
+
+          if (!host || !port || !password) return false;
+
+          const p = new URLSearchParams();
+          if (obj.tls && typeof obj.tls === 'object') {
+            // insecure может быть булевым или числом/строкой
+            if (obj.tls.insecure === true || obj.tls.insecure === 1 || obj.tls.insecure === '1') p.set('insecure', '1');
+            // иногда указывают enabled + insecure
+            if ((obj.tls.enabled === true || obj.tls.enabled === 'true') && (obj.tls.insecure)) p.set('insecure', '1');
+            if (obj.tls.server_name) p.set('sni', obj.tls.server_name);
+            if (obj.tls.serverName) p.set('sni', obj.tls.serverName);
+          } else {
+            // поддержка старых полей
+            if (obj.insecure === true || obj.insecure === 1 || obj.insecure === '1') p.set('insecure', '1');
+            if (obj.sni) p.set('sni', obj.sni);
+          }
+
+          // тег (может быть base64)
+          let tag = (obj.tag || obj.remarks || obj.title || obj.e || obj.name || '').toString();
+          if (tag && /^[A-Za-z0-9+/=]+$/.test(tag)) {
+            try { tag = atob(tag); } catch (e) { /* not base64 — leave as is */ }
+          }
+          const encTag = tag ? encodeURIComponent(tag) : '';
+
+          const base = `hysteria2://${encodeURIComponent(password)}@${host}:${port}`;
+          const qs = p.toString();
+          const url = base + (qs ? `?${qs}` : '') + (encTag ? `#${encTag}` : '');
+          urls.push(url);
+          return true;
+        }
+
+        function handleSingBoxOutbounds(obj, urls) {
+          if (
+            typeof obj !== 'object' ||
+            !obj.log ||
+            !obj.dns ||
+            !Array.isArray(obj.inbounds) ||
+            !Array.isArray(obj.outbounds) ||
+            !obj.route
+          ) return false;
+
+          obj.outbounds.forEach(o => {
+            let url;
+
+            if (o.type === 'vless' && o.uuid && o.server && o.server_port) {
+              const p = new URLSearchParams();
+              if (o.flow) p.set('flow', o.flow);
+              if (o.transport?.type) p.set('type', o.transport.type);
+              if (o.tls?.enabled) {
+                p.set('security', o.tls.reality?.enabled ? 'reality' : 'tls');
+                if (o.tls.server_name) p.set('sni', o.tls.server_name);
+                if (o.tls.utls?.fingerprint) p.set('fp', o.tls.utls.fingerprint);
+                if (o.tls.reality?.enabled) {
+                  p.set('pbk', o.tls.reality.public_key);
+                  p.set('sid', o.tls.reality.short_id);
+                }
+              }
+              if (o.transport?.type === 'grpc' && o.transport.service_name) {
+                p.set('serviceName', o.transport.service_name);
+              }
+              url = `vless://${o.uuid}@${o.server}:${o.server_port}` +
+                (p.toString() ? `?${p.toString()}` : '') +
+                `#${encodeURIComponent(o.tag || '')}`;
+            }
+            else if (o.type === 'shadowsocks' && o.server && o.server_port && o.method && o.password) {
+              const auth = btoa(`${o.method}:${o.password}`).replace(/=+$/, '');
+              const p = new URLSearchParams();
+              if (o.ota !== undefined) p.set('ota', o.ota ? '1' : '0');
+              url = `ss://${auth}@${o.server}:${o.server_port}` +
+                (p.toString() ? `?${p.toString()}` : '') +
+                `#${encodeURIComponent(o.tag || '')}`;
+            }
+            else if (o.type === 'trojan' && o.password && o.server && o.server_port) {
+              const p = new URLSearchParams();
+              if (o.tls?.server_name) p.set('sni', o.tls.server_name);
+              url = `trojan://${encodeURIComponent(o.password)}@${o.server}:${o.server_port}` +
+                (p.toString() ? `?${p.toString()}` : '') +
+                `#${encodeURIComponent(o.tag || '')}`;
+            }
+
+            if (url) urls.push(url);
+          });
+
+          return true;
+        }
+
+        document.getElementById('btnConvert').onclick = () => {
+          let raw = inEl.value;
+          const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+          if (f !== -1 && l > f) raw = raw.slice(f, l + 1);
+          if (!raw.trim()) {
+            outEl.value = 'отсутствует json';
+            return;
+          }
+
+          const objs = extractAllJSON(raw), urls = [];
+          objs.forEach(obj => {
+            if (handleSingBoxOutbounds(obj, urls)) return;
+            if (handleGarbageVless(obj, urls)) return;
+
+            // НОВЫЙ: обрабатываем простые/нестандартные hysteria JSON сразу
+            if (handleSimpleHysteria(obj, urls)) return;
+
+            if (handleGarbageShadowsocks(obj, urls)) return;
+            if (handleGarbageShadowsocksAlt(obj, urls)) return;
+            if (handleSpecialJunkConfig(obj, urls)) return;
+            if (handleJunkConfig(obj, urls)) return;
+            if (obj.configType === 'VLESS' &&
+              obj.customConfig && obj.password && obj.server) {
+              buildURLFromLegacy(obj, urls);
+              return;
+            }
+            if (obj.outboundBean) {
+              buildURLsFromOutboundBean(obj, urls);
+              return;
+            }
+            if (obj.custom_json &&
+              Array.isArray(obj.custom_json.outbounds)) {
+              buildURLsFromCustomJSON(obj, urls);
+              return;
+            }
+            if (obj.server && obj.method &&
+              obj.password && obj.server_port) {
+              const a = btoa(`${obj.method}:${obj.password}`).replace(/=+$/, '');
+              let u = `ss://${a}@${obj.server}:${obj.server_port}`;
+              if (obj.remarks) u += `#${encodeURIComponent(obj.remarks)}`;
+              urls.push(u);
+              return;
+            }
+            if (obj.configType === 'VLESS' &&
+              obj.security === 'reality' &&
+              obj.server) {
+              const p = new URLSearchParams();
+              p.set('encryption', obj.method || 'none');
+              p.set('security', obj.security);
+              if (obj.flow) p.set('flow', obj.flow);
+              if (obj.alpn) p.set('alpn', Array.isArray(obj.alpn) ? obj.alpn.join(',') : obj.alpn);
+              p.set('allowInsecure', obj.insecure ? '1' : '0');
+              p.set('type', obj.network || '');
+              if (obj.sni) p.set('sni', obj.sni);
+              if (obj.fingerPrint) p.set('fp', obj.fingerPrint);
+              if (obj.publicKey) p.set('pbk', obj.publicKey);
+              if (obj.shortId) p.set('sid', obj.shortId);
+              if (obj.serviceName) p.set('serviceName', obj.serviceName);
+              const t = obj.remarks ? encodeURIComponent(obj.remarks) : '';
+              urls.push(`vless://${obj.password}@${obj.server}:${obj.serverPort}?${p.toString()}#${t}`);
+              return;
+            }
+            // Обрабатываем outbounds: сначала проверяем на простой hysteria, иначе вызываем buildURLFromOutbound
+            (obj.outbounds || obj.fullConfig?.outbounds || []).forEach(o => {
+              if (!handleSimpleHysteria(o, urls)) {
+                buildURLFromOutbound(o, obj.remarks, urls);
+              }
+            });
+          });
+          outEl.value = urls.join('\n');
+        };
+
+        document.getElementById('btnConvertBack').onclick = () => {
+          const raw = inEl.value.trim();
+          if (!raw) { outEl.value = 'отсутствует url'; return; }
+          const lines = raw.split(/\r?\n/).filter(Boolean);
+          const unified = [];
+          lines.forEach(line => {
+            (function parseLine(l) {
+              if (l.startsWith('ss://')) {
+                const [main, hash] = l.slice(5).split('#');
+                const tag = hash ? decodeURIComponent(hash) : '';
+                const [auth, hp] = main.split('@');
+                const [method, password] = atob(auth).split(':');
+                // Обрезаем всё после ? перед разбором адреса и порта
+                const hostport = hp.split('?')[0];
+                const [address, portStr] = hostport.split(':');
+                const port = +portStr;
+                unified.push({
+                  protocol: 'shadowsocks',
+                  tag,
+                  settings: { servers: [{ address, port, method, password }] },
+                  streamSettings: { network: 'tcp', security: 'none', tcpSettings: {} }
+                });
+                return;
+              }
+
+              if (l.startsWith('wireguard://')) {
+                const obj = parseWireguardURL(l);
+                if (obj) unified.push(obj);
+                return;
+              }
+
+              if (l.startsWith('hysteria2://')) {
+                try {
+                  const u = new URL(l);
+                  const password = decodeURIComponent(u.username);
+                  const [host, port] = u.host.split(':');
+                  const p = u.searchParams;
+                  const insecure = p.get('insecure') === '1';
+                  const sni = p.get('sni') || '';
+                  unified.push({
+                    protocol: 'hysteria2',
+                    tag: u.hash ? decodeURIComponent(u.hash.slice(1)) : 'hysteria2',
+                    settings: { servers: [{ address: host, port: parseInt(port, 10) }] },
+                    streamSettings: {
+                      network: 'hysteria2', security: 'tls',
+                      hy2Settings: { password, use_udp_extension: insecure, congestion: { down_mbps: 0, up_mbps: 0 } },
+                      tlsSettings: { allowInsecure: insecure, serverName: sni }
+                    },
+                    domainStrategy: 'AsIs'
+                  });
+                } catch { }
+                return;
+              }
+
+              try {
+                const u = new URL(l);
+                const p = u.searchParams;
+                const proto = u.protocol.slice(0, -1);
+                const tag = decodeURIComponent(u.hash.slice(1)) || proto;
+                const typeParam = p.get('type') || 'tcp';
+                const headerType = p.get('headerType') || '';
+                const h = p.get('host') || '';
+                const path = p.get('path') || '';
+                const flow = p.get('flow') || '';
+                const seed = p.get('seed') || '';
+                const serviceName = p.get('serviceName') || '';
+                const ssConf = {
+                  network: typeParam === 'xhttp' ? 'splithttp' : typeParam,
+                  security: p.get('security') || '',
+                  packetEncoding: p.get('packetEncoding') || '',
+                  tlsSettings: {
+                    serverName: p.get('sni') || '',
+                    allowInsecure: p.get('allowInsecure') === '1',
+                    fingerprint: p.get('fp') || '',
+                    alpn: p.get('alpn') ? p.get('alpn').split(',') : []
+                  },
+                  realitySettings: { publicKey: p.get('pbk') || '', shortId: p.get('sid') || '', serverName: p.get('sni') || '' },
+                  kcpSettings: { seed: seed },
+                  grpcSettings: { serviceName: serviceName },
+                  tcpSettings: headerType === 'http' ? { header: { type: 'http', request: { headers: { Host: [h] }, path: [path] } } } : undefined,
+                  httpSettings: typeParam === 'http' ? { host: [h], path } : undefined,
+                  splithttpSettings: typeParam === 'xhttp' ? { host: h, path } : undefined,
+                  httpupgradeSettings: typeParam === 'httpupgrade' ? { host: h, path } : undefined,
+                  wsSettings: typeParam === 'ws' && h ? { headers: { Host: h }, path } : undefined
+                };
+
+                if (proto === 'trojan') {
+                  ssConf.security = p.get('security') || 'tls';
+                  ssConf.tlsSettings = ssConf.tlsSettings || {};
+                  if (p.get('allowInsecure') === '1') ssConf.tlsSettings.allowInsecure = true;
+                  const sni = p.get('sni');
+                  if (sni) ssConf.tlsSettings.serverName = sni;
+                }
+
+                if (proto === 'vless') unified.push({ protocol: 'vless', tag, settings: { vnext: [{ address: u.hostname, port: +u.port, users: [{ id: u.username, encryption: p.get('encryption') || 'none', flow, serviceName }] }] }, streamSettings: ssConf });
+                if (proto === 'vmess') unified.push({ protocol: 'vmess', tag, settings: { vnext: [{ address: u.hostname, port: +u.port, users: [{ id: u.username, security: p.get('encryption') || 'auto' }] }] }, streamSettings: ssConf });
+                if (proto === 'trojan') {
+                  const pwd = decodeURIComponent(u.username), host2 = u.hostname, port2 = +u.port;
+                  unified.push({ protocol: 'trojan', tag, settings: { servers: [{ address: host2, port: port2, password: pwd }] }, streamSettings: ssConf });
+                }
+              } catch { }
+            })(line);
+          });
+
+          const config = {
+            dns: { fallbackStrategy: 'disabledIfAnyMatch', servers: [{ address: '8.8.8.8', queryStrategy: 'UseIP' }] },
+            inbounds: [
+              { listen: '0.0.0.0', port: 10805, protocol: 'socks', settings: { auth: 'noauth', udp: true }, tag: 'socks' },
+              { listen: '0.0.0.0', port: 1080, protocol: 'http', settings: { allowTransparent: true }, tag: 'http' },
+              { listen: '0.0.0.0', port: 10804, protocol: 'dokodemo-door', settings: { address: '0.0.0.0', network: 'tcp,udp', port: 10804 }, tag: 'dns-in' }
+            ],
+            log: { loglevel: 'warning' },
+            outbounds: unified,
+            policy: { levels: { '1': { connIdle: 30 } }, system: { statsOutboundDownlink: true, statsOutboundUplink: true } },
+            routing: { domainStrategy: 'AsIs', rules: [{ inboundTag: ['dns-in'], outboundTag: 'dns-out', type: 'field' }] },
+            stats: {}
+          };
+
+          outEl.value = JSON.stringify(config, null, 2);
+        };
+
+        document.getElementById('btnTextBase64').onclick = () => {
+          const t = inEl.value.trim();
+          if (!t) { outEl.value = 'отсутствует текст'; return; }
+          try { outEl.value = decodeURIComponent(escape(atob(t))); }
+          catch { outEl.value = btoa(unescape(encodeURIComponent(t))); }
+        };
+
+        document.getElementById('btnCopy').onclick = () => {
+          const text = outEl.value;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => alert('Скопировано!')).catch(fallback);
+          } else fallback();
+          function fallback() {
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.setAttribute('wrap', 'off');
+            ta.style.position = 'absolute'; ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select(); ta.setSelectionRange(0, ta.value.length);
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            alert('Скопировано!');
+          }
+        };
+
+        document.getElementById('btnDownload').onclick = () => {
+          const d = outEl.value.trim();
+          if (!d) return alert('Нет данных');
+          const link = hiddenDownloadLink;
+          link.href = URL.createObjectURL(new Blob([d], { type: 'text/plain' }));
+          link.download = 'result.txt'; link.click();
+          setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        };
+
+        document.getElementById('btnLoadFile').onclick = () => fileInput.click();
+        fileInput.onchange = e => {
+          const fr = new FileReader();
+          fr.onload = () => inEl.value = fr.result;
+          fr.readAsText(e.target.files[0]);
+        };
+
+        btnClearInput.addEventListener('click', () => { inEl.value = ''; });
+        btnClearOutput.addEventListener('click', () => { outEl.value = ''; });
+
+        btnSettingsLocal.addEventListener('click', () => { settingsModalLocal.style.display = 'flex'; });
+        closeSettingsLocal.addEventListener('click', () => { settingsModalLocal.style.display = 'none'; });
+
+        function applyReplacement(regex, replacement) {
+          const lines = inEl.value.split(/\r?\n/);
+          outEl.value = lines.map(l => l.replace(regex, replacement)).join('\n');
+        }
+
+
+        // … ваш остальной код …
+
+        document.getElementById('btnReplaceWsHost').addEventListener('click', () => {
+          const newHost = document.getElementById('replaceWsHostInput').value.trim();
+          const lines = inEl.value.trim().split(/\r?\n/);
+          const updated = lines.map(l => {
+            try {
+              const u = new URL(l);
+              u.searchParams.set('host', newHost);
+              return u.toString();
+            } catch {
+              return l;
+            }
+          });
+          inEl.value = updated.join('\n');
+          settingsModalLocal.style.display = 'none';
+          btnFilter.click();
+        });
+
+        document.getElementById('btnReplaceSni').addEventListener('click', () => {
+          const newSni = document.getElementById('replaceSniInput').value.trim();
+          const lines = inEl.value.trim().split(/\r?\n/);
+          const updated = lines.map(l => {
+            try {
+              const u = new URL(l);
+              u.searchParams.set('sni', newSni);
+              return u.toString();
+            } catch {
+              return l;
+            }
+          });
+          inEl.value = updated.join('\n');
+          settingsModalLocal.style.display = 'none';
+          btnFilter.click();
+        });
+
+
+        document.getElementById('btnReplaceName').addEventListener('click', () => {
+          // НЕ тримим newName — сохраняем любые ведущие/хвостовые пробелы и любые символы
+          const newNameRaw = document.getElementById('replaceNameInput').value;
+          const prepend = document.getElementById('prependName').checked;
+          const append = document.getElementById('appendName').checked;
+
+          // Берём исходный текст, НО НЕ меняем inEl.value
+          const lines = inEl.value.split(/\r?\n/);
+
+          const updated = lines.map(l => {
+            try {
+              const u = new URL(l);
+              const existing = u.hash ? decodeURIComponent(u.hash.slice(1)) : '';
+
+              let combined;
+              if (prepend || append) {
+                if (prepend && append) combined = newNameRaw + existing + newNameRaw;
+                else if (prepend) combined = newNameRaw + existing;
+                else /* append */ combined = existing + newNameRaw;
+              } else {
+                // если ничего не отмечено — поведение "как раньше": полная замена
+                combined = newNameRaw;
+              }
+
+              // Устанавливаем хэш — кодируем через encodeURIComponent, чтобы любые символы были безопасны в URL
+              if (combined !== undefined && combined !== null) {
+                if (combined === '') u.hash = '';        // пустой — убрать хэш
+                else u.hash = `#${encodeURIComponent(combined)}`;
+              }
+
+              return u.toString();
+            } catch (e) {
+              // не URL — возвращаем строку без изменений (мы не меняем исходник)
+              return l;
+            }
+          });
+
+          // Запись ТОЛЬКО в окно результата
+          outEl.value = updated.join('\n');
+
+          // Закрываем модалку, НЕ трогаем inEl и НЕ запускаем btnFilter
+          settingsModalLocal.style.display = 'none';
+        });
+
+        ; (function () {
+          const btn = document.getElementById('ipWsToggle');
+          let toggled = false, orig = '', mod = '';
+          btn.addEventListener('click', () => {
+            orig = orig || inEl.value.trim();
+            try {
+              const parsed = JSON.parse(orig);
+              parsed.outbounds.forEach(o => {
+                const ws = o.streamSettings?.wsSettings?.headers?.Host
+                  || o.streamSettings?.httpSettings?.host?.[0]
+                  || o.streamSettings?.splithttpSettings?.host || '';
+                if (ws) {
+                  if (o.settings?.vnext?.[0]) {
+                    o._orig = o.settings.vnext[0].address;
+                    o.settings.vnext[0].address = ws;
+                  } else if (o.settings?.servers?.[0]) {
+                    o._orig = o.settings.servers[0].address;
+                    o.settings.servers[0].address = ws;
+                  }
+                }
+              });
+              mod = JSON.stringify(parsed, null, 2);
+            } catch {
+              mod = orig.split('\n').map(l => {
+                try {
+                  const u = new URL(l);
+                  const ws = u.searchParams.get('host');
+                  if (ws) {
+                    u.hostname = decodeURIComponent(ws);
+                    return u.toString();
+                  }
+                  return l;
+                } catch {
+                  return l;
+                }
+              }).join('\n');
+            }
+            outEl.value = toggled ? orig : mod;
+            toggled = !toggled;
+            settingsModalLocal.style.display = 'none';
+          });
+
+          // Надёжно включаем ipSni handler — удаляем старые слушатели, добавляем новый
+          (function () {
+            // если кнопки нет — ничего не делаем
+            const oldBtn = document.getElementById('ipSniToggle');
+            if (!oldBtn) return;
+
+            // Убираем все предыдущие слушатели на случай, если они где-то были добавлены
+            const newBtn = oldBtn.cloneNode(true);
+            oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+            // Теперь новый элемент без слушателей — добавляем корректный обработчик
+            newBtn.addEventListener('click', () => {
+              // Берём исходный текст, НЕ меняем inEl
+              const lines = inEl.value.split(/\r?\n/);
+
+              const updated = lines.map(l => {
+                try {
+                  const u = new URL(l);
+                  const p = new URLSearchParams(u.search);
+
+                  const rawSni = p.get('sni');
+                  if (!rawSni) return l; // если sni нет — не меняем строку
+
+                  // Декодируем sni (на случай %-encoding)
+                  let decodedSni;
+                  try { decodedSni = decodeURIComponent(rawSni); } catch { decodedSni = rawSni; }
+
+                  const oldHost = u.hostname;
+                  // Если decodedSni содержит порт (например example.com:443), корректно распарсим
+                  const m = decodedSni.match(/^(.+):(\d+)$/);
+                  if (m) {
+                    u.hostname = m[1];
+                    u.port = m[2];
+                  } else {
+                    u.hostname = decodedSni;
+                    // порт оставляем прежним (u.port не трогаем)
+                  }
+
+                  // Записываем старый host в sni (как строку)
+                  p.set('sni', oldHost);
+
+                  // Сохраняем все остальные параметры
+                  u.search = p.toString() ? `?${p.toString()}` : '';
+
+                  return u.toString();
+                } catch (err) {
+                  return l;
+                }
+              });
+
+              // Пишем ТОЛЬКО в окно результата
+              outEl.value = updated.join('\n');
+
+              // Закрываем модалку
+              settingsModalLocal.style.display = 'none';
+            });
+          })();
+
+        })();
+
+        // дедупликация
+        document.getElementById('btnDedup').addEventListener('click', () => {
+          const raw = inEl.value.trim();
+          let output = '';
+          try {
+            const cfg = JSON.parse(raw);
+            if (Array.isArray(cfg.outbounds)) {
+              const seen = new Set();
+              const deduped = cfg.outbounds.filter(o => {
+                const copy = { ...o };
+                delete copy.tag;
+                delete copy.remarks;
+                const key = JSON.stringify(copy);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+              cfg.outbounds = deduped;
+              output = JSON.stringify(cfg, null, 2);
+            } else {
+              throw '';
+            }
+          } catch {
+            const lines = raw.split(/\r?\n/).filter(Boolean);
+            const seen = new Set();
+            const deduped = [];
+            for (let line of lines) {
+              const core = line.split('#')[0];
+              if (!seen.has(core)) {
+                seen.add(core);
+                deduped.push(line);
+              }
+            }
+            output = deduped.join('\n');
+          }
+          outEl.value = output;
+          document.querySelector('#statusContainer #processStatus').innerHTML = 'дедупликация выполнена';
+          settingsModalLocal.style.display = 'none';
+        });
+
+        function toSS(o) {
+          const b64 = btoa(o.method + ':' + o.password).replace(/=+$/, '');
+          return `ss://${b64}@${o.server}:${o.serverPort}#${encodeURIComponent(o.remarks || '')}`;
+        }
+
+
+        (function () {
+          const btn = document.getElementById('btnConvert');
+          const orig = btn.onclick;          // базовый JSON→URL
+
+          btn.onclick = async function (...args) {
+            // 1) базовая конвертация
+            await orig.apply(this, args);
+
+            const raw = inEl.value;
+
+            // 2) NEW JSON BUILDER: \u0002 -> ss://
+            const partsSS = raw.split(/\u0002+/);
+            const urlsSS = [];
+            for (let p of partsSS) {
+              const s = p.indexOf('{'), e = p.lastIndexOf('}');
+              if (s < 0 || e <= s) continue;
+              try {
+                const o = JSON.parse(p.slice(s, e + 1));
+                if (o.configType === 'SHADOWSOCKS' && o.method && o.password && o.server && o.serverPort) {
+                  urlsSS.push(toSS(o));
+                }
+              } catch { }
+            }
+            if (urlsSS.length) {
+              outEl.value += (outEl.value ? '\n' : '') + urlsSS.join('\n');
+            }
+
+            // 3) “мусорные” VLESS/TROJAN JSON
+            const partsJT = raw.split(/\u0002+|\r?\n/);
+            const urlsJT = [];
+            for (let p of partsJT) {
+              const s = p.indexOf('{'), e = p.lastIndexOf('}');
+              if (s < 0 || e <= s) continue;
+              try {
+                const o = JSON.parse(p.slice(s, e + 1));
+
+                if (o.configType === 'TROJAN') {
+                  const bean = o.outboundBean?.[0];
+                  const srv = bean?.settings?.servers?.[0];
+                  const ss2 = bean?.streamSettings || {};
+                  if (srv) {
+                    const qp = new URLSearchParams();
+                    qp.set('security', ss2.security || 'none');
+                    qp.set('type', ss2.network || '');
+                    urlsJT.push(
+                      `trojan://${encodeURIComponent(srv.password)}@${srv.address}:${srv.port}?${qp.toString()}`
+                    );
+                  }
+                }
+
+                if (o.configType === 'VLESS') {
+                  const bean = o.outboundBean?.[0];
+                  const v = bean?.settings?.vnext?.[0];
+                  const u = v?.users?.[0];
+                  const ss2 = bean?.streamSettings || {};
+                  if (v && u) {
+                    const qp = new URLSearchParams();
+                    qp.set('encryption', u.encryption || 'none');
+                    qp.set('security', ss2.security || 'none');
+                    qp.set('type', ss2.network || '');
+                    urlsJT.push(
+                      `vless://${u.id}@${v.address}:${v.port}?${qp.toString()}`
+                    );
+                  }
+                }
+              } catch { }
+            }
+            if (urlsJT.length) {
+              outEl.value += (outEl.value ? '\n' : '') + urlsJT.join('\n');
+            }
+          };
+        })();
+
+
+        (function () {
+          const btn = document.getElementById('btnConvert');
+          const orig2 = btn.onclick;
+          btn.onclick = async function (...args) {
+            await orig2.apply(this, args);
+
+            const lines = inEl.value.trim().split(/\r?\n/).filter(Boolean);
+            const wgLines = lines.filter(l => l.startsWith('wireguard://'));
+            if (wgLines.length) {
+              const iniBlocks = wgLines.map(parseWireguardToIni).filter(Boolean);
+              outEl.value += (outEl.value ? '\n\n' : '') + iniBlocks.join('\n\n');
+            }
+
+            const iniText = inEl.value.trim();
+            if (iniText.startsWith('[Interface]')) {
+              const url = parseIniToWireguard(iniText);
+              outEl.value += (outEl.value ? '\n' : '') + url;
+            }
+          };
+        })();
       });
-      mod = JSON.stringify(parsed, null, 2);
-    } catch {
-      mod = orig.split('\n').map(l => {
-        try {
-          const u = new URL(l);
-          const ws = u.searchParams.get('host');
-          if (ws) {
-            u.hostname = decodeURIComponent(ws);
-            return u.toString();
-          }
-          return l;
-        } catch {
-          return l;
-        }
-      }).join('\n');
-    }
-    outEl.value = toggled ? orig : mod;
-    toggled = !toggled;
-    settingsModalLocal.style.display = 'none';
-  });
-})();
-
-      // дедупликация
-      document.getElementById('btnDedup').addEventListener('click', () => {
-  const raw = inEl.value.trim();
-  let output = '';
-  try {
-    const cfg = JSON.parse(raw);
-    if (Array.isArray(cfg.outbounds)) {
-      const seen = new Set();
-      const deduped = cfg.outbounds.filter(o => {
-        const copy = { ...o };
-        delete copy.tag;
-        delete copy.remarks;
-        const key = JSON.stringify(copy);
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      cfg.outbounds = deduped;
-      output = JSON.stringify(cfg, null, 2);
-    } else {
-      throw '';
-    }
-  } catch {
-    const lines = raw.split(/\r?\n/).filter(Boolean);
-    const seen = new Set();
-    const deduped = [];
-    for (let line of lines) {
-      const core = line.split('#')[0];
-      if (!seen.has(core)) {
-        seen.add(core);
-        deduped.push(line);
-      }
-    }
-    output = deduped.join('\n');
-  }
-  outEl.value = output;
-  document.querySelector('#statusContainer #processStatus').innerHTML = 'дедупликация выполнена';
-  settingsModalLocal.style.display = 'none';
-});
-
-function toSS(o) {
-      const b64 = btoa(o.method + ':' + o.password).replace(/=+$/, '');
-      return `ss://${b64}@${o.server}:${o.serverPort}#${encodeURIComponent(o.remarks||'')}`;
-    }
-    
-    
-(function(){
-  const btn = document.getElementById('btnConvert');
-  const orig = btn.onclick;          // базовый JSON→URL
-
-  btn.onclick = async function(...args) {
-    // 1) базовая конвертация
-    await orig.apply(this, args);
-
-    const raw = inEl.value;
-
-    // 2) NEW JSON BUILDER: \u0002 -> ss://
-    const partsSS = raw.split(/\u0002+/);
-    const urlsSS = [];
-    for (let p of partsSS) {
-      const s = p.indexOf('{'), e = p.lastIndexOf('}');
-      if (s < 0 || e <= s) continue;
-      try {
-        const o = JSON.parse(p.slice(s, e + 1));
-        if (o.configType === 'SHADOWSOCKS' && o.method && o.password && o.server && o.serverPort) {
-          urlsSS.push(toSS(o));
-        }
-      } catch {}
-    }
-    if (urlsSS.length) {
-      outEl.value += (outEl.value ? '\n' : '') + urlsSS.join('\n');
-    }
-
-    // 3) “мусорные” VLESS/TROJAN JSON
-    const partsJT = raw.split(/\u0002+|\r?\n/);
-    const urlsJT = [];
-    for (let p of partsJT) {
-      const s = p.indexOf('{'), e = p.lastIndexOf('}');
-      if (s < 0 || e <= s) continue;
-      try {
-        const o = JSON.parse(p.slice(s, e + 1));
-
-        if (o.configType === 'TROJAN') {
-          const bean = o.outboundBean?.[0];
-          const srv  = bean?.settings?.servers?.[0];
-          const ss2  = bean?.streamSettings || {};
-          if (srv) {
-            const qp = new URLSearchParams();
-            qp.set('security', ss2.security || 'none');
-            qp.set('type', ss2.network || '');
-            urlsJT.push(
-              `trojan://${encodeURIComponent(srv.password)}@${srv.address}:${srv.port}?${qp.toString()}`
-            );
-          }
-        }
-
-        if (o.configType === 'VLESS') {
-          const bean = o.outboundBean?.[0];
-          const v    = bean?.settings?.vnext?.[0];
-          const u    = v?.users?.[0];
-          const ss2  = bean?.streamSettings || {};
-          if (v && u) {
-            const qp = new URLSearchParams();
-            qp.set('encryption', u.encryption || 'none');
-            qp.set('security', ss2.security || 'none');
-            qp.set('type', ss2.network || '');
-            urlsJT.push(
-              `vless://${u.id}@${v.address}:${v.port}?${qp.toString()}`
-            );
-          }
-        }
-      } catch {}
-    }
-    if (urlsJT.length) {
-      outEl.value += (outEl.value ? '\n' : '') + urlsJT.join('\n');
-    }
-  };
-})();
 
 
-(function(){
-  const btn = document.getElementById('btnConvert');
-  const orig2 = btn.onclick;
-  btn.onclick = async function(...args) {
-    await orig2.apply(this, args);
 
-    const lines = inEl.value.trim().split(/\r?\n/).filter(Boolean);
-    const wgLines = lines.filter(l => l.startsWith('wireguard://'));
-    if (wgLines.length) {
-      const iniBlocks = wgLines.map(parseWireguardToIni).filter(Boolean);
-      outEl.value += (outEl.value ? '\n\n' : '') + iniBlocks.join('\n\n');
-    }
-
-    const iniText = inEl.value.trim();
-    if (iniText.startsWith('[Interface]')) {
-      const url = parseIniToWireguard(iniText);
-      outEl.value += (outEl.value ? '\n' : '') + url;
-    }
-  };
-})();
-    });
-    
-
-   
-  </script>
+    </script>
 </body>
+
 </html>

@@ -1,8 +1,10 @@
-<!DOCTYPE html><html lang="ru">
+<!DOCTYPE html>
+<html lang="ru">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Невидимый шифратор</title>
+  <title>Невидимый шифратор — с паролем</title>
   <style>
     /* Общие стили */
     body {
@@ -10,15 +12,18 @@
       color: #fff;
       font-family: monospace;
       padding: 1em;
-      font-weight: bold; /* Всё текста жирное */
+      font-weight: bold;
+      /* Всё текста жирное */
       display: flex;
       flex-direction: column;
       align-items: stretch;
     }
+
     h3 {
       margin: 0;
       padding: 0.5em 0;
     }
+
     textarea {
       width: 100%;
       margin: 0.5em 0;
@@ -28,39 +33,60 @@
       resize: vertical;
       font-family: monospace;
       font-size: 1em;
-      border: 4px solid red; /* По умолчанию красная толстая тонкая рамка */
+      border: 4px solid red;
+      /* По умолчанию красная толстая тонкая рамка */
       font-weight: bold;
     }
+
     /* Верхний textarea зелёная рамка */
     #in {
       border: 4px solid green;
     }
+
     /* Нижний textarea красная рамка */
     #out {
       border: 4px solid red;
     }
+
+    /* Поле пароля — маленькое широкое окно */
+    #password {
+      width: 100%;
+      padding: 0.4em;
+      margin: 0.2em 0;
+      background: #111;
+      color: #fff;
+      border: 3px solid #444;
+      font-family: monospace;
+      font-weight: bold;
+    }
+
     .buttons-row {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5em;
       margin-top: 0.5em;
     }
+
     button {
       flex: 1 1 auto;
       min-width: 120px;
       padding: 0.5em;
       background: #111;
       color: #fff;
-      border: 3px solid #333; /* Толще кнопки */
+      border: 3px solid #333;
+      /* Толще кнопки */
       cursor: pointer;
       font-weight: bold;
     }
+
     button:hover {
       background: #222;
     }
+
     input[type="file"] {
       display: none;
     }
+
     label[for="fileLoader"] {
       flex: 1 1 auto;
       min-width: 120px;
@@ -73,22 +99,66 @@
       user-select: none;
       font-weight: bold;
     }
+
     /* Адаптация под мобильный */
     @media (max-width: 600px) {
       .buttons-row {
         flex-direction: column;
       }
-      button, label[for="fileLoader"] {
+
+      button,
+      label[for="fileLoader"] {
         min-width: 0;
         width: 100%;
       }
     }
+
+    /* Простой модальный для запроса пароля (в случае необходимости) */
+    .modal-overlay {
+      position: fixed;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .modal {
+      background: #111;
+      border: 3px solid #444;
+      padding: 1em;
+      width: 90%;
+      max-width: 480px;
+      text-align: center;
+    }
+
+    .modal input {
+      width: 100%;
+      padding: 0.5em;
+      margin-top: 0.5em;
+      background: #000;
+      color: #fff;
+      border: 2px solid #333;
+      font-family: monospace;
+      font-weight: bold;
+    }
+
+    .modal button {
+      margin-top: 0.6em;
+    }
   </style>
 </head>
+
 <body>
-  <h3>🔒 Шифратор/Дешифратор текста — тройное сжатие (октальный код → Unicode)</h3>
+  <h3>🔒 Шифратор/Дешифратор текста — тройное сжатие (октальный код → Unicode) с паролем</h3>
   <textarea id="in" rows="6" placeholder="Введи или вставь текст сюда..."></textarea>
-  <textarea id="out" rows="6" placeholder="Результат... (редактируемый)"></textarea>
+  <!-- Маленькое широкое поле для пароля --> <input id="password" type="password"
+    placeholder="Пароль (оставь пустым — без пароля)" /> <textarea id="out" rows="6"
+    placeholder="Результат... (редактируемый)"></textarea>
   <div class="buttons-row">
     <button onclick="encryptText()">🔐 Зашифровать</button>
     <button onclick="decryptText()">🔓 Расшифровать</button>
@@ -99,94 +169,239 @@
     <button onclick="clearInput()">🧹 Очистить весь текст</button>
   </div>
   <input type="file" id="fileLoader" accept=".txt" onchange="loadFromFile()" />
+  <!-- Модальное окно для ввода пароля при расшифровке (если нужно) -->
+  <div id="pwModal" class="modal-overlay">
+    <div class="modal">
+      <div id="pwPromptText">Введите пароль для расшифровки</div>
+      <input id="pwModalInput" type="password" />
+      <div style="display:flex;gap:0.4em;justify-content:center;">
+        <button onclick="confirmModal()">OK</button>
+        <button onclick="cancelModal()">Отмена</button>
+      </div>
+    </div>
+  </div>
   <script>
     // Используем 8 вариационных селекторов U+FE00…U+FE07 — они невидимы во всех браузерах
     const symbols = Array.from({ length: 8 }, (_, i) => String.fromCharCode(0xFE00 + i));
-    const octLen = 3;function encrypt(text) {
-  const bytes = new TextEncoder().encode(text);
-  let res = "";
-  for (let b of bytes) {
-    let oct = (b + 0x100).toString(8).slice(-octLen);
-    for (let d of oct) res += symbols[+d];
-  }
-  return res;
-}
+    const octLen = 3;
 
-function decrypt(str) {
-  const chars = Array.from(str);
-  let bytes = [];
-  for (let i = 0; i < chars.length; i += octLen) {
-    let chunk = chars.slice(i, i+octLen);
-    let oct = chunk.map(c => symbols.indexOf(c)).join("");
-    if (oct.length === octLen) bytes.push(parseInt(oct, 8) - 0x100);
-  }
-  return new TextDecoder().decode(new Uint8Array(bytes));
-}
+    // Структура заголовка (в байтах): MAGIC(4) | SALT_LEN(1) | SALT(saltLen) | CHECKSUM(4) | ENCRYPTED_BYTES...
+    const MAGIC = new Uint8Array([0xDE, 0xAD, 0xBE, 0xEF]);
 
-function encryptText() {
-  const text = document.getElementById("in").value;
-  document.getElementById("out").value = encrypt(text);
-}
-
-function decryptText() {
-  const text = document.getElementById("in").value;
-  document.getElementById("out").value = decrypt(text);
-}
-
-function copyToClipboard() {
-  const out = document.getElementById("out");
-  if (!out.value) return alert("❗ Нет текста для копирования");
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(out.value)
-      .then(() => alert("✅ Результат скопирован!"))
-      .catch(() => fallbackCopy(out));
-  } else {
-    fallbackCopy(out);
-  }
-}
-
-function fallbackCopy(element) {
-  try {
-    element.select();
-    element.setSelectionRange(0, element.value.length);
-    if (document.execCommand('copy')) {
-      alert("✅ Результат скопирован (fallback)!");
-    } else {
-      alert("❌ Не удалось скопировать результат");
+    // Вспомогательные: конвертация bytes <-> невидимые символы (октальное представление по 3 цифры)
+    function bytesToSymbols(bytes) {
+      let res = "";
+      for (let b of bytes) {
+        let oct = (b + 0x100).toString(8).slice(-octLen);
+        for (let d of oct) res += symbols[+d];
+      }
+      return res;
     }
-  } catch {
-    alert("❌ Не удалось скопировать результат");
-  }
-  window.getSelection().removeAllRanges();
-}
 
-function clearInput() {
-  document.getElementById("in").value = '';
-  document.getElementById("out").value = '';
-}
+    function symbolsToBytes(str) {
+      const chars = Array.from(str);
+      let bytes = [];
+      for (let i = 0; i < chars.length; i += octLen) {
+        let chunk = chars.slice(i, i + octLen);
+        if (chunk.length < octLen) break;
+        let oct = chunk.map(c => symbols.indexOf(c)).join("");
+        if (oct.includes("-1")) { // найден символ не из набора
+          // игнорируем и прерываем
+          break;
+        }
+        bytes.push(parseInt(oct, 8) - 0x100);
+      }
+      return new Uint8Array(bytes);
+    }
 
-function saveToFile() {
-  const text = document.getElementById("out").value;
-  if (!text) return alert("❗ Нет текста для сохранения");
-  const blob = new Blob([text], { type: 'text/plain' });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "invisible_text.txt";
-  a.click();
-}
+    async function deriveKeystream(password, salt, length) {
+      // password: string, salt: Uint8Array, length: required bytes
+      const enc = new TextEncoder();
+      const passKey = await crypto.subtle.importKey(
+        'raw',
+        enc.encode(password),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits']
+      );
+      const bits = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+        passKey,
+        length * 8
+      );
+      return new Uint8Array(bits);
+    }
 
-function loadFromFile() {
-  const fileInput = document.getElementById("fileLoader");
-  const file = fileInput.files[0];
-  if (!file) return alert("❗Файл не выбран");
-  const reader = new FileReader();
-  reader.onload = () => {
-    document.getElementById("in").value = reader.result;
-  };
-  reader.readAsText(file);
-}
+    async function encrypt(text, password) {
+      const bytes = new TextEncoder().encode(text);
+      if (!password) {
+        // Без пароля — просто кодируем исходные байты
+        return bytesToSymbols(bytes);
+      }
+
+      // С паролем: генерируем salt, вычисляем keystream и XOR
+      const saltLen = 16;
+      const salt = crypto.getRandomValues(new Uint8Array(saltLen));
+      const keyStream = await deriveKeystream(password, salt, bytes.length);
+      const enc = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) enc[i] = bytes[i] ^ keyStream[i];
+
+      // checksum: первые 4 байта SHA-256 исходного текста — для проверки корректности пароля
+      const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+      const checksum = digest.slice(0, 4);
+
+      // собираем полный blob: MAGIC + saltLen + salt + checksum + enc
+      const header = new Uint8Array(4 + 1 + saltLen + 4 + enc.length);
+      let pos = 0;
+      header.set(MAGIC, pos); pos += 4;
+      header[pos++] = saltLen;
+      header.set(salt, pos); pos += saltLen;
+      header.set(checksum, pos); pos += 4;
+      header.set(enc, pos);
+
+      return bytesToSymbols(header);
+    }
+
+    async function decrypt(str, password) {
+      const allBytes = symbolsToBytes(str);
+      if (allBytes.length >= 5 && allBytes[0] === MAGIC[0] && allBytes[1] === MAGIC[1] && allBytes[2] === MAGIC[2] && allBytes[3] === MAGIC[3]) {
+        // Это зашифровано с паролем
+        const saltLen = allBytes[4];
+        const minHeader = 4 + 1 + saltLen + 4; // magic + saltLen + salt + checksum
+        if (allBytes.length < minHeader) throw new Error('Неверный формат: недостаточно данных.');
+        const salt = allBytes.slice(5, 5 + saltLen);
+        const checksum = allBytes.slice(5 + saltLen, 5 + saltLen + 4);
+        const encBytes = allBytes.slice(5 + saltLen + 4);
+
+        // Нужно получить пароль
+        let pw = password;
+        if (!pw) {
+          // если пароль не передан, показать модальное окно для ввода
+          pw = await promptPassword('Введите пароль для расшифровки:');
+          if (pw === null) throw new Error('Операция отменена пользователем');
+        }
+
+        const keyStream = await deriveKeystream(pw, salt, encBytes.length);
+        const dec = new Uint8Array(encBytes.length);
+        for (let i = 0; i < encBytes.length; i++) dec[i] = encBytes[i] ^ keyStream[i];
+
+        // Проверка контрольной суммы
+        const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', dec));
+        const check = digest.slice(0, 4);
+        for (let i = 0; i < 4; i++) if (check[i] !== checksum[i]) throw new Error('Неверный пароль или повреждённые данные');
+
+        return new TextDecoder().decode(dec);
+      } else {
+        // Без пароля — просто декодируем как исходные байты
+        return new TextDecoder().decode(allBytes);
+      }
+    }
+
+    // Простейший modal prompt (используется при расшифровке, если поле пароля пустое)
+    const modal = document.getElementById('pwModal');
+    const modalInput = document.getElementById('pwModalInput');
+    let modalResolve = null;
+
+    function promptPassword(promptText) {
+      return new Promise((resolve) => {
+        document.getElementById('pwPromptText').textContent = promptText || 'Введите пароль';
+        modalInput.value = '';
+        modal.style.display = 'flex';
+        modalInput.focus();
+        modalResolve = resolve;
+      });
+    }
+
+    function confirmModal() {
+      modal.style.display = 'none';
+      if (modalResolve) modalResolve(modalInput.value);
+      modalResolve = null;
+    }
+    function cancelModal() {
+      modal.style.display = 'none';
+      if (modalResolve) modalResolve(null);
+      modalResolve = null;
+    }
+
+    // UI функции
+    async function encryptText() {
+      try {
+        const text = document.getElementById('in').value || '';
+        const pw = document.getElementById('password').value || '';
+        const out = await encrypt(text, pw);
+        document.getElementById('out').value = out;
+      } catch (e) {
+        alert('Ошибка при шифровании: ' + e.message);
+      }
+    }
+
+    async function decryptText() {
+      try {
+        const text = document.getElementById('in').value || '';
+        const pw = document.getElementById('password').value || '';
+        const out = await decrypt(text, pw);
+        document.getElementById('out').value = out;
+      } catch (e) {
+        alert('Ошибка при расшифровке: ' + e.message);
+      }
+    }
+
+    function copyToClipboard() {
+      const out = document.getElementById('out');
+      if (!out.value) return alert('❗ Нет текста для копирования');
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(out.value)
+          .then(() => alert('✅ Результат скопирован!'))
+          .catch(() => fallbackCopy(out));
+      } else {
+        fallbackCopy(out);
+      }
+    }
+
+    function fallbackCopy(element) {
+      try {
+        element.select();
+        element.setSelectionRange(0, element.value.length);
+        if (document.execCommand('copy')) {
+          alert('✅ Результат скопирован (fallback)!');
+        } else {
+          alert('❌ Не удалось скопировать результат');
+        }
+      } catch {
+        alert('❌ Не удалось скопировать результат');
+      }
+      window.getSelection().removeAllRanges();
+    }
+
+    function clearInput() {
+      document.getElementById('in').value = '';
+      document.getElementById('out').value = '';
+      document.getElementById('password').value = '';
+    }
+
+    function saveToFile() {
+      const text = document.getElementById('out').value;
+      if (!text) return alert('❗ Нет текста для сохранения');
+      const blob = new Blob([text], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'invisible_text.txt';
+      a.click();
+    }
+
+    function loadFromFile() {
+      const fileInput = document.getElementById('fileLoader');
+      const file = fileInput.files[0];
+      if (!file) return alert('❗Файл не выбран');
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById('in').value = reader.result;
+      };
+      reader.readAsText(file);
+    }
 
   </script>
 </body>
+
 </html>
