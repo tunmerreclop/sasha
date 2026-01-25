@@ -87,27 +87,13 @@
       display: none;
     }
 
-    label[for="fileLoader"] {
-      flex: 1 1 auto;
-      min-width: 120px;
-      padding: 0.5em;
-      background: #111;
-      color: #fff;
-      border: 3px solid #333;
-      cursor: pointer;
-      text-align: center;
-      user-select: none;
-      font-weight: bold;
-    }
-
     /* Адаптация под мобильный */
     @media (max-width: 600px) {
       .buttons-row {
         flex-direction: column;
       }
 
-      button,
-      label[for="fileLoader"] {
+      button {
         min-width: 0;
         width: 100%;
       }
@@ -164,7 +150,7 @@
     <button onclick="decryptText()">🔓 Расшифровать</button>
     <button onclick="copyToClipboard()">📋 Скопировать результат</button>
     <button onclick="saveToFile()">💾 Скачать результат</button>
-    <label for="fileLoader">📂 Загрузить файл</label>
+    <button onclick="document.getElementById('fileLoader').click()">📂 Загрузить файл</button>
     <!-- Кнопка вставить из буфера удалена -->
     <button onclick="clearInput()">🧹 Очистить весь текст</button>
   </div>
