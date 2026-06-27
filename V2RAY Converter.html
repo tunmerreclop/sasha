@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>V2RAY Converter (Vmess Vless Trojan Shadowsocks Wireguard Hysteria2) Тестовый</title>
+  <title>V2RAY Converter v26u (Vmess Vless Trojan Shadowsocks Wireguard Hysteria2) Тестовый</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     * {
@@ -530,7 +530,7 @@
 </head>
 
 <body>
-  <h1 style="font-size: 15px; text-align: center; margin-top: -8px">V2RAY Converter</h1>
+  <h1 style="font-size: 15px; text-align: center; margin-top: -8px">V2RAY Converter v26u</h1>
   <h1 style="font-size: 11px; text-align: center; margin-bottom:10px; margin-top:-3px;">(Vmess Vless Trojan Shadowsocks
     Wireguard Hysteria)</h1>
   <div id="filterRow">
@@ -2296,6 +2296,163 @@
             if (iniText.startsWith('[Interface]')) {
               const url = parseIniToWireguard(iniText);
               outEl.value += (outEl.value ? '\n' : '') + url;
+            }
+          };
+        })();
+
+        // ── ulink://install/?content=BASE64&format=json support ──
+        (function () {
+          /**
+           * Декодирует base64url/base64 строку с padding-толерантностью.
+           * content-параметр может содержать base64url ('-' вместо '+', '_' вместо '/')
+           * а также %3D%3D вместо == — URL уже раскодирован через searchParams.get().
+           */
+          function safeAtob(s) {
+            try {
+              // base64url → base64 (заменяем - и _, восстанавливаем padding)
+              const padded = s.replace(/-/g, '+').replace(/_/g, '/');
+              const rem = padded.length % 4;
+              const fixed = rem ? padded + '===='.slice(rem) : padded;
+              // atob даёт бинарную строку (latin1), конвертируем в настоящий UTF-8
+              const bin = atob(fixed);
+              const bytes = new Uint8Array(bin.length);
+              for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+              return new TextDecoder('utf-8').decode(bytes);
+            } catch { return null; }
+          }
+
+          // Маппинг fingerprint sing-box → xray/v2ray.
+          // sing-box поддерживает 'qq' (QQ Browser), но многие клиенты его не знают.
+          const FP_MAP = { qq: 'chrome', randomized: 'random' };
+          function normFp(fp) { return FP_MAP[fp] || fp || ''; }
+
+          /**
+           * Конвертирует один sing-box outbound объект в URI-строку.
+           * tag передаётся отдельно (приоритет: hash URL > o.tag).
+           */
+          function singBoxOutboundToURI(o, tag) {
+            if (!o || !o.type) return null;
+            const encTag = encodeURIComponent(tag || o.tag || '');
+
+            if (o.type === 'vless' && o.uuid && o.server && o.server_port) {
+              const p = new URLSearchParams();
+              p.set('encryption', 'none');
+              if (o.flow) p.set('flow', o.flow);
+              const tls = o.tls || {};
+              if (tls.enabled) {
+                const isReality = tls.reality && tls.reality.enabled;
+                p.set('security', isReality ? 'reality' : 'tls');
+                if (tls.server_name) p.set('sni', tls.server_name);
+                const fp = normFp(tls.utls && tls.utls.fingerprint);
+                if (fp) p.set('fp', fp);
+                if (tls.insecure) p.set('allowInsecure', '1');
+                if (isReality) {
+                  if (tls.reality.public_key) p.set('pbk', tls.reality.public_key);
+                  if (tls.reality.short_id)   p.set('sid', tls.reality.short_id);
+                }
+              }
+              const tr = o.transport || {};
+              p.set('type', tr.type || 'tcp');
+              if (tr.type === 'ws') {
+                if (tr.path) p.set('path', tr.path);
+                if (tr.headers && tr.headers.Host) p.set('host', tr.headers.Host);
+              } else if (tr.type === 'grpc' && tr.service_name) {
+                p.set('serviceName', tr.service_name);
+              } else if (tr.type === 'http' || tr.type === 'httpupgrade') {
+                if (tr.path) p.set('path', tr.path);
+                if (tr.host) p.set('host', Array.isArray(tr.host) ? tr.host[0] : tr.host);
+              }
+              return `vless://${o.uuid}@${o.server}:${o.server_port}?${p.toString()}#${encTag}`;
+            }
+
+            if (o.type === 'trojan' && o.password && o.server && o.server_port) {
+              const p = new URLSearchParams();
+              const tls = o.tls || {};
+              if (tls.enabled) p.set('security', 'tls');
+              if (tls.server_name) p.set('sni', tls.server_name);
+              if (tls.insecure) p.set('allowInsecure', '1');
+              const fp = normFp(tls.utls && tls.utls.fingerprint);
+              if (fp) p.set('fp', fp);
+              const qs = p.toString();
+              return `trojan://${encodeURIComponent(o.password)}@${o.server}:${o.server_port}${qs ? '?' + qs : ''}#${encTag}`;
+            }
+
+            if (o.type === 'shadowsocks' && o.method && o.password && o.server && o.server_port) {
+              const auth = btoa(`${o.method}:${o.password}`).replace(/=+$/, '');
+              return `ss://${auth}@${o.server}:${o.server_port}#${encTag}`;
+            }
+
+            if ((o.type === 'hysteria2' || o.type === 'hysteria') && o.password && o.server && o.server_port) {
+              const p = new URLSearchParams();
+              const tls = o.tls || {};
+              if (tls.server_name) p.set('sni', tls.server_name);
+              if (tls.insecure) p.set('insecure', '1');
+              const qs = p.toString();
+              return `hysteria2://${encodeURIComponent(o.password)}@${o.server}:${o.server_port}${qs ? '?' + qs : ''}#${encTag}`;
+            }
+
+            return null;
+          }
+
+          /**
+           * Парсит ulink://install/?content=BASE64&format=json#TAG
+           * Возвращает массив URI или [].
+           */
+          function parseUlink(line) {
+            if (!line.startsWith('ulink://')) return null;
+            try {
+              // ulink:// — нестандартная схема, заменяем для парсинга
+              const u = new URL(line.replace(/^ulink:\/\//, 'https://ulink-dummy/'));
+              const contentParam = u.searchParams.get('content');
+
+              // u.hash.slice(1) возвращает fragment как percent-encoded строку (%F0%9F%87%B8...).
+              // Декодируем в Unicode для передачи в singBoxOutboundToURI (там encodeURIComponent сделает правильное кодирование).
+              const hashRaw = u.hash ? u.hash.slice(1) : '';
+              let hashTag = '';
+              if (hashRaw) {
+                try { hashTag = decodeURIComponent(hashRaw); } catch { hashTag = hashRaw; }
+              }
+
+              if (!contentParam) return [];
+
+              const decoded = safeAtob(contentParam);
+              if (!decoded) return [];
+
+              let parsed;
+              try { parsed = JSON.parse(decoded); } catch { return []; }
+
+              const outbounds = Array.isArray(parsed)
+                ? parsed
+                : (Array.isArray(parsed.outbounds) ? parsed.outbounds : [parsed]);
+
+              const uris = [];
+              outbounds.forEach(o => {
+                // hash-тег приоритетнее o.tag: задаётся автором ссылки, всегда корректен
+                const tag = hashTag || o.tag || '';
+                const uri = singBoxOutboundToURI(o, tag);
+                if (uri) uris.push(uri);
+              });
+              return uris;
+            } catch { return []; }
+          }
+
+          const btn = document.getElementById('btnConvert');
+          const origUlink = btn.onclick;
+          btn.onclick = async function (...args) {
+            await origUlink.apply(this, args);
+
+            const lines = inEl.value.trim().split(/\r?\n/).filter(Boolean);
+            const ulinkLines = lines.filter(l => l.trim().startsWith('ulink://'));
+            if (!ulinkLines.length) return;
+
+            const uris = [];
+            ulinkLines.forEach(l => {
+              const res = parseUlink(l.trim());
+              if (res) uris.push(...res);
+            });
+
+            if (uris.length) {
+              outEl.value = (outEl.value ? outEl.value + '\n' : '') + uris.join('\n');
             }
           };
         })();
