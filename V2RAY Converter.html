@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>V2RAY Converter v26u (Vmess Vless Trojan Shadowsocks Wireguard Hysteria2) Тестовый</title>
+  <title>V2RAY Converter v27u (Vmess Vless Trojan Shadowsocks Wireguard Hysteria2)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     * {
@@ -154,7 +154,6 @@
       display: none;
     }
 
-    /* GeoIP и фильтр */
     #filterRow {
       display: flex;
       flex-direction: column;
@@ -167,19 +166,25 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
+      row-gap: 4px;
     }
 
-    #ipGeoToggle {
+    #ipGeoToggle,
+    #geoSortToggle {
       width: 20px;
       height: 20px;
       cursor: pointer;
+      flex: none;
     }
 
-    #ipGeoLabel {
+    #ipGeoLabel,
+    #geoSortLabel {
       font-size: 0.9em;
       margin-left: -7px;
       color: #bbb;
       user-select: none;
+      white-space: nowrap;
     }
 
     #geoServiceInput {
@@ -345,7 +350,6 @@
       font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
     }
 
-    /* Модалка настроек */
     #settingsModal {
       position: fixed;
       top: 0;
@@ -405,7 +409,6 @@
       cursor: pointer;
     }
 
-    /* стиль: ip→ws-host и ip→sni одинаковые */
     #ipWsToggle,
     #ipSniToggle {
       position: absolute;
@@ -425,7 +428,6 @@
       cursor: pointer;
     }
 
-    /* конкретные позиции чтобы кнопки не накладывались */
     #ipWsToggle {
       left: 120px;
     }
@@ -434,7 +436,6 @@
       left: 260px;
     }
 
-    /* адаптив */
     @media (max-width:480px) {
 
       #ipWsToggle,
@@ -530,7 +531,7 @@
 </head>
 
 <body>
-  <h1 style="font-size: 15px; text-align: center; margin-top: -8px">V2RAY Converter v26u</h1>
+  <h1 style="font-size: 15px; text-align: center; margin-top: -8px">V2RAY Converter v27u</h1>
   <h1 style="font-size: 11px; text-align: center; margin-bottom:10px; margin-top:-3px;">(Vmess Vless Trojan Shadowsocks
     Wireguard Hysteria)</h1>
   <div id="filterRow">
@@ -539,6 +540,8 @@
       <label for="ipGeoToggle" id="ipGeoLabel">GeoIP</label>
       <input id="geoServiceInput" type="text" placeholder="https://ipwhois.app/json/{ip}"
         value="https://ipwhois.app/json/{ip}">
+      <input type="checkbox" id="geoSortToggle" checked>
+      <label for="geoSortToggle" id="geoSortLabel">A&rarr;Z</label>
       <div id="statusContainer">
         <div class="spinner" id="spinner"></div><span id="processStatus"></span>
       </div>
@@ -584,8 +587,6 @@
   <input type="file" id="fileInput" accept=".txt,.json,.yaml,.yml">
   <a id="hiddenDownloadLink" style="display:none;"></a>
 
-
-  <!-- Заменить старую секцию settingsModal на эту -->
   <div id="settingsModal">
     <div id="settingsContent">
       <h3>Замена/добавление Ws-Host</h3>
@@ -604,7 +605,6 @@
         <button id="btnReplaceName">ОК</button>
       </div>
 
-      <!-- Новая строка с переключателями -->
       <div class="settings-row" style="gap:12px; align-items:center; font-size:0.95em;">
         <label style="display:inline-flex; align-items:center; gap:6px; user-select:none;">
           <input type="checkbox" id="prependName" /> <span>дописать в начало</span>
@@ -615,8 +615,6 @@
         <span style="color:#bbb; margin-left:8px; font-size:0.85em;">(если оба — добавит в начало и в конец)</span>
       </div>
 
-
-      <!-- Контейнер кнопок в модалке настроек (поставь вместо текущих кнопок ipWsToggle / ipSniToggle) -->
       <div style="position:relative; padding-bottom:50px;">
         <button id="ipWsToggle">ip→to host</button>
         <button id="ipSniToggle">ip→to sni</button>
@@ -626,7 +624,6 @@
     </div>
 
     <script>
-
 
       const countries = [
         { flag: '🌎', name: 'ОТКЛ' },
@@ -881,8 +878,6 @@
 
       ];
 
-
-
       function parseWireguardToIni(line) {
         try {
           const u = new URL(line);
@@ -902,7 +897,6 @@
             '',
             '[Peer]',
             `PublicKey = ${pub}`,
-            // Здесь важно именно "PreSharedKey" с большой буквой S
             `PreSharedKey = ${psk}`,
             `Endpoint = ${host}:${port}`,
             `PersistentKeepalive = 25`
@@ -921,7 +915,6 @@
             if (k && v !== undefined) map[k] = v;
           });
 
-          // helper: case-insensitive lookup for keys like PresharedKey / presharedkey / psk / preSharedKey
           function findKeyIgnoreCase(obj, candidates) {
             const keys = Object.keys(obj);
             for (const cand of candidates) {
@@ -933,10 +926,8 @@
           }
 
           const privateKey = map['PrivateKey'] || map['Privatekey'] || findKeyIgnoreCase(map, ['privatekey', 'private_key']) || '';
-          // endpoint should be like host:port — если нет, оставим как есть
           const endpoint = map['Endpoint'] || map['Endpoint '] || findKeyIgnoreCase(map, ['endpoint', 'endpoint_address']) || '';
 
-          // Ищем pre-shared key по разным вариантам имён (регистр-независимо)
           const pskCandidates = ['PresharedKey', 'Presharedkey', 'presharedkey', 'PSK', 'psk', 'PreSharedKey', 'PreSharedkey'];
           const pskValue = map['PresharedKey'] || findKeyIgnoreCase(map, pskCandidates) || '';
 
@@ -944,8 +935,6 @@
           const publicKey = map['PublicKey'] || map['Publickey'] || findKeyIgnoreCase(map, ['publickey', 'public_key']) || '';
           const mtu = map['MTU'] || map['Mtu'] || findKeyIgnoreCase(map, ['mtu']) || '1420';
 
-          // Собираем URL
-          // username = private key; host = endpoint
           const url = new URL(`wireguard://${encodeURIComponent(privateKey)}@${endpoint}`);
           if (address) url.searchParams.set('address', address);
           if (pskValue) url.searchParams.set('presharedkey', pskValue);
@@ -978,11 +967,248 @@
         return cc.toUpperCase().replace(/./g, c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65));
       }
 
+      const FP_KNOWN = ['randomized', 'random', 'chrome', 'firefox', 'safari',
+        'edge', 'android', 'ios', '360', 'qq', 'unsafe'];
+
+      const FP_ALIAS = {
+        hellogolang: '', golang: '', hellorandomized: 'randomized',
+        hellorandomizedalpn: 'randomized', hellorandomizednoalpn: 'randomized',
+        hellochrome: 'chrome', hellofirefox: 'firefox', hellosafari: 'safari',
+        helloios: 'ios', helloandroid: 'android', helloedge: 'edge',
+        hello360: '360', helloqq: 'qq'
+      };
+
+      const FP_COMPAT = { qq: 'chrome', randomized: 'random' };
+
+      function normalizeFp(v) {
+        if (v == null) return '';
+        let x = String(v).trim().toLowerCase().replace(/["'\s]/g, '');
+        if (!x) return '';
+        x = x.replace(/_.*$/, '');
+        let out = '';
+        if (Object.prototype.hasOwnProperty.call(FP_ALIAS, x)) out = FP_ALIAS[x];
+        else if (FP_KNOWN.includes(x)) out = x;
+        else {
+          const alias = Object.keys(FP_ALIAS).find(k => k && x.includes(k));
+          if (alias) out = FP_ALIAS[alias];
+          else out = FP_KNOWN.find(k => x.includes(k)) || '';
+        }
+        if (!out) return '';
+        return FP_COMPAT[out] || out;
+      }
+
+      function setFp(params, ...cands) {
+        for (const c of cands) {
+          const fp = normalizeFp(c);
+          if (fp) { params.set('fp', fp); return fp; }
+        }
+        return '';
+      }
+
       function buildGeoUrl(host) {
         const tpl = document.getElementById('geoServiceInput').value.trim().replace(/\/+$/, '');
         if (tpl.includes('{ip}')) return tpl.replace(/{ip}/g, host);
         if (tpl.includes('?')) return `${tpl}&ip=${host}`;
         return `${tpl}/${host}`;
+      }
+
+      const GEO_TIMEOUT = 7000;
+      const GEO_CONCURRENCY = 3;
+      const GEO_MIN_INTERVAL = 250;
+      const GEO_COOLDOWN = 20000;
+      const _dnsCache = new Map();
+      const _geoCache = new Map();
+
+      const DOH_SERVICES = [
+        (h, t) => `https://dns.google/resolve?name=${encodeURIComponent(h)}&type=${t}`,
+        (h, t) => `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(h)}&type=${t}&ct=application/dns-json`,
+        (h, t) => `https://dns.alidns.com/resolve?name=${encodeURIComponent(h)}&type=${t}`
+      ];
+
+      const GEO_FALLBACKS = [
+        ip => `https://ipwhois.app/json/${ip}`,
+        ip => `https://freeipapi.com/api/json/${ip}`,
+        ip => `https://ipapi.co/${ip}/json/`,
+        ip => `https://api.iplocation.net/?ip=${ip}`
+      ];
+
+      function isIPv4(x) {
+        return /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/.test(x || '');
+      }
+      function isIPv6(x) {
+        return typeof x === 'string' && x.includes(':') && /^[0-9a-fA-F:.]+$/.test(x);
+      }
+
+      async function fetchJSON(url, timeout = GEO_TIMEOUT) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), timeout);
+        try {
+          const r = await fetch(url, { signal: ctrl.signal });
+          if (!r.ok) return null;
+          return await r.json();
+        } catch { return null; }
+        finally { clearTimeout(timer); }
+      }
+
+      function hostFromConfigLine(line) {
+        let l = String(line || '').trim();
+        if (!l) return '';
+        if (/^vmess:\/\//i.test(l) && !l.includes('@')) {
+          try {
+            const j = JSON.parse(decodeURIComponent(escape(atob(l.replace(/^vmess:\/\//i, '').trim()))));
+            if (j && j.add) return String(j.add).trim();
+          } catch { }
+        }
+        l = l.split('#')[0];
+        const at = l.lastIndexOf('@');
+        if (at >= 0) l = l.slice(at + 1);
+        else { const i = l.indexOf('://'); if (i >= 0) l = l.slice(i + 3); }
+        l = l.split(/[/?]/)[0];
+        const v6 = l.match(/^\[([^\]]+)\]/);
+        if (v6) return v6[1];
+        return l.split(':')[0].trim();
+      }
+
+      async function resolveHostToIp(host) {
+        const h = String(host || '').replace(/^\[|\]$/g, '').trim();
+        if (!h) return null;
+        if (isIPv4(h) || isIPv6(h)) return h;
+        if (_dnsCache.has(h)) return _dnsCache.get(h);
+        for (const [type, code] of [['A', 1], ['AAAA', 28]]) {
+          for (const svc of DOH_SERVICES) {
+            const d = await fetchJSON(svc(h, type), 5000);
+            if (!d) continue;
+            const ans = d.Answer || d.answer;
+            if (Array.isArray(ans)) {
+              const rec = ans.find(a => a && a.type === code && a.data);
+              if (rec) { _dnsCache.set(h, rec.data); return rec.data; }
+            }
+            if (d.Status === 3) { _dnsCache.set(h, null); return null; }
+            if (typeof d.Status === 'number') break;
+          }
+        }
+        _dnsCache.set(h, null);
+        return null;
+      }
+
+      function pickCountry(d) {
+        if (!d || typeof d !== 'object') return null;
+        const rawCode = d.country_code || d.countryCode || d.country_code2 ||
+          d.code || d.geoplugin_countryCode ||
+          (typeof d.country === 'string' && d.country.length === 2 ? d.country : '');
+        const code = String(rawCode || '').toUpperCase().slice(0, 2);
+        if (!/^[A-Z]{2}$/.test(code)) return null;
+        let name = d.country_name || d.countryName || d.geoplugin_countryName ||
+          (typeof d.country === 'string' && d.country.length > 2 ? d.country : '') || '';
+        const flag = countryCodeToFlag(code);
+        if (!name || name.length <= 3 || name.toUpperCase() === code) {
+          const entry = countries.find(c => c.flag === flag);
+          if (entry) name = entry.name;
+        }
+        return name ? `${flag} ${name}` : null;
+      }
+
+      const _geoCooldown = new Map();
+      let _geoGate = Promise.resolve();
+      function geoThrottle() {
+        const prev = _geoGate;
+        let release;
+        _geoGate = new Promise(r => { release = r; });
+        return prev.then(() => { setTimeout(release, GEO_MIN_INTERVAL); });
+      }
+
+      async function countryByIp(ip) {
+        if (!ip) return null;
+        if (_geoCache.has(ip)) return _geoCache.get(ip);
+        const builders = [];
+        const el = document.getElementById('geoServiceInput');
+        if (el && el.value.trim()) builders.push(x => buildGeoUrl(x));
+        GEO_FALLBACKS.forEach(f => builders.push(f));
+
+        const now = () => Date.now();
+        for (let pass = 0; pass < 2; pass++) {
+          for (let i = 0; i < builders.length; i++) {
+            if (pass === 0 && (_geoCooldown.get(i) || 0) > now()) continue;
+            await geoThrottle();
+            const label = pickCountry(await fetchJSON(builders[i](ip)));
+            if (label) {
+              _geoCooldown.delete(i);
+              _geoCache.set(ip, label);
+              return label;
+            }
+            _geoCooldown.set(i, now() + GEO_COOLDOWN);
+          }
+        }
+        _geoCache.set(ip, null);
+        return null;
+      }
+
+      function hasCountryLabel(line) {
+        const l = String(line || '');
+        const i = l.indexOf('#');
+        if (i < 0) return false;
+        let frag = l.slice(i + 1).trim();
+        try { frag = decodeURIComponent(frag); } catch { }
+        return /^[\u{1F1E6}-\u{1F1FF}]{2}\s+\S/u.test(frag);
+      }
+
+      async function geoLabelLines(lines, onProgress) {
+        const clean = lines.map(l => String(l).trim()).filter(Boolean);
+        const hosts = [...new Set(
+          clean.filter(l => !hasCountryLabel(l)).map(hostFromConfigLine).filter(Boolean)
+        )];
+        const labels = new Map();
+        let done = 0, ok = 0, bad = 0;
+        const queue = hosts.slice();
+
+        async function worker() {
+          while (queue.length) {
+            const h = queue.shift();
+            let label = null, why = 'dns';
+            const ip = await resolveHostToIp(h);
+            if (ip) { why = 'api'; label = await countryByIp(ip); }
+            labels.set(h, label || { fail: why });
+            if (label) ok++; else bad++;
+            done++;
+            if (onProgress) onProgress(done, hosts.length, ok, bad);
+          }
+        }
+
+        await Promise.all(Array.from(
+          { length: Math.min(GEO_CONCURRENCY, Math.max(queue.length, 1)) }, worker
+        ));
+
+        return clean.map(l => {
+          if (hasCountryLabel(l)) return l;
+          const base = l.split('#')[0].replace(/\s+$/, '');
+          const v = labels.get(hostFromConfigLine(l));
+          if (typeof v === 'string') return `${base}#${v}`;
+          return `${base}#\u2753 Undefined (${v && v.fail ? v.fail : 'no host'})`;
+        });
+      }
+
+      function geoSortKey(line) {
+        const l = String(line || '');
+        const i = l.indexOf('#');
+        let frag = i >= 0 ? l.slice(i + 1).trim() : '';
+        try { frag = decodeURIComponent(frag); } catch { }
+        let country = 'zzzzzzzz';
+        const m = frag.match(/^[\u{1F1E6}-\u{1F1FF}]{2}\s*(.+)$/u);
+        if (m) country = m[1].trim().toLowerCase().replace(/\s*\([^)]*\)$/, '');
+        else if (frag && !/undefined/i.test(frag)) country = frag.toLowerCase();
+        const host = hostFromConfigLine(l);
+        const hostKey = isIPv4(host)
+          ? '0' + host.split('.').map(n => n.padStart(3, '0')).join('.')
+          : '1' + host.toLowerCase();
+        return [country, hostKey, l];
+      }
+      function geoSortCompare(a, b) {
+        const ka = geoSortKey(a), kb = geoSortKey(b);
+        for (let i = 0; i < ka.length; i++) {
+          const c = ka[i].localeCompare(kb[i], 'en');
+          if (c) return c;
+        }
+        return 0;
       }
 
       function buildURLFromLegacy(o, urls) {
@@ -996,6 +1222,8 @@
         if (o.alpn) p.set('alpn', Array.isArray(o.alpn) ? o.alpn.join(',') : o.alpn);
         if (o.pbk) p.set('pbk', o.pbk);
         if (o.sid) p.set('sid', o.sid);
+        setFp(p, o.fingerPrint, o.fingerprint, o.fp);
+        if (o.spiderX || o.spx) p.set('spx', o.spiderX || o.spx);
         if (o.flow) p.set('flow', o.flow);
         if (o.seed) p.set('seed', o.seed);
         if (o.serviceName) p.set('serviceName', o.serviceName);
@@ -1079,12 +1307,14 @@
 
         if (st.security) p.set('security', st.security);
         if (tls.allowInsecure) p.set('allowInsecure', '1');
-        if (Array.isArray(tls.alpn)) p.set('alpn', tls.alpn.join(','));
+        if (Array.isArray(tls.alpn) && tls.alpn.length) p.set('alpn', tls.alpn.join(','));
+        else if (typeof tls.alpn === 'string' && tls.alpn) p.set('alpn', tls.alpn);
         if (tls.serverName) p.set('sni', tls.serverName);
         else if (rel.serverName) p.set('sni', rel.serverName);
-        if (tls.fingerprint) p.set('fp', tls.fingerprint);
+        setFp(p, tls.fingerprint, rel.fingerprint, st.fingerprint);
         if (rel.publicKey) p.set('pbk', rel.publicKey);
         if (rel.shortId) p.set('sid', rel.shortId);
+        if (rel.spiderX) p.set('spx', rel.spiderX);
         if (st.grpcSettings?.serviceName) p.set('serviceName', st.grpcSettings.serviceName);
         if (st.kcpSettings?.seed) p.set('seed', st.kcpSettings.seed);
 
@@ -1099,17 +1329,13 @@
         if (net === 'splithttp') net = 'xhttp';
         p.set('type', net);
 
-
-        // Заменить блок определения host/path внутри функции buildURLFromOutbound (вместо существующего "let host = ''; let path = ''; ...")
         let host = '';
         let path = '';
 
-        // Унифицированный сбор host/path для ws, splithttp, xhttp (xhttpSettings), httpupgrade, http и tcp(header=http)
         if (net === 'ws' && st.wsSettings) {
           host = st.wsSettings.headers?.Host || '';
           path = st.wsSettings.path || '';
         } else if (net === 'xhttp') {
-          // xhttp может быть в splithttpSettings или в xhttpSettings; поддерживаем оба варианта
           if (st.splithttpSettings) {
             host = Array.isArray(st.splithttpSettings.host) ? st.splithttpSettings.host[0] : (st.splithttpSettings.host || '');
             path = st.splithttpSettings.path || '';
@@ -1117,7 +1343,6 @@
             host = Array.isArray(st.xhttpSettings.host) ? st.xhttpSettings.host[0] : (st.xhttpSettings.host || '');
             path = st.xhttpSettings.path || '';
           } else {
-            // последний общий фолбэк на случай нетипичных структур
             const hp = st.httpSettings || st.httpupgradeSettings || {};
             host = Array.isArray(hp.host) ? hp.host[0] : (hp.host || '');
             path = hp.path || '';
@@ -1157,14 +1382,16 @@
           const port = json.port;
           const id = json.id;
           const params = new URLSearchParams();
-          if (json.security) params.set('security', json.security);
-          if (json.encryption) params.set('encryption', json.encryption);
+          const vmSec = json.security || json.tls || '';
+          if (vmSec && vmSec !== 'none') params.set('security', vmSec);
+          const vmEnc = json.encryption || json.scy || '';
+          if (vmEnc) params.set('encryption', vmEnc);
           if (json.net) params.set('type', json.net);
           if (json.type) params.set('headerType', json.type);
           if (json.host) params.set('host', json.host);
           if (json.path) params.set('path', json.path);
           if (json.sni) params.set('sni', json.sni);
-          if (json.fingerprint) params.set('fp', json.fingerprint);
+          setFp(params, json.fp, json.fingerprint);
           if (json.alpn) params.set('alpn', Array.isArray(json.alpn) ? json.alpn.join(',') : json.alpn);
           if (json.flow) params.set('flow', json.flow);
           if (json.pbk) params.set('pbk', json.pbk);
@@ -1224,7 +1451,6 @@
         return false;
       }
 
-
       function handleJunkConfig(obj, urls) {
         if (obj.configType === 'SHADOWSOCKS' && obj.method && obj.password && obj.server && obj.serverPort) {
           const a = btoa(`${obj.method}:${obj.password}`).replace(/=+$/, ''), tag = encodeURIComponent(obj.remarks || '');
@@ -1241,12 +1467,11 @@
           if (obj.host) params.set('host', obj.host);
           if (obj.path) params.set('path', obj.path);
           if (obj.sni) params.set('sni', obj.sni);
-          if (obj.fingerPrint) params.set('fp', obj.fingerPrint);
+          setFp(params, obj.fingerPrint, obj.fingerprint, obj.fp);
           if (obj.alpn) params.set('alpn', Array.isArray(obj.alpn) ? obj.alpn.join(',') : obj.alpn);
           if (obj.publicKey) params.set('pbk', obj.publicKey);
           if (obj.shortId) params.set('sid', obj.shortId);
 
-          // <<< ДОБАВЛЕНО: сохраняем serviceName, если он есть (и поддерживаем альтернативные ключи)
           const svc = obj.serviceName || obj.service_name || obj.service;
           if (svc) params.set('serviceName', svc);
 
@@ -1257,8 +1482,6 @@
         }
         return false;
       }
-
-
 
       document.addEventListener('DOMContentLoaded', () => {
         const inEl = document.getElementById('inputConfig'),
@@ -1298,7 +1521,6 @@
           filterCountries('', listEl);
         }
 
-
         function filterCountries(term, listEl) {
           const lower = (term || '').toLowerCase();
           listEl.innerHTML = '';
@@ -1311,8 +1533,6 @@
               item.className = 'country-item';
               item.innerHTML = `<span>${c.flag}</span><span>${c.name}</span>`;
               item.onclick = () => {
-                // Если в списке выбран пункт "ОТКЛ" (он же в countries[0]), то используем значение 'OFF'
-                // чтобы логика фильтрации, где проверяется selectedCountry === 'OFF', продолжала работать.
                 const up = (c.name || '').toString().toUpperCase();
                 if (up === 'ОТКЛ' || up === 'OFF') {
                   selectedCountry = 'OFF';
@@ -1343,7 +1563,6 @@
           spinner.style.display = spinning ? 'inline-block' : 'none';
         }
 
-
         const tcpBaseline = 99;
         const httpBaseline = 999;
         const httpFactor = tcpBaseline / httpBaseline;
@@ -1369,7 +1588,6 @@
         async function pingAll() {
           pinging = true;
           resultsPing = [];
-          // ... остальной код ...
 
           const lines = inEl.value.split(/\r?\n/).filter(Boolean), total = lines.length;
           for (let i = 0; i < total; i++) {
@@ -1391,7 +1609,6 @@
         btnFilter.onclick = async () => {
           const raw = inEl.value.trim(),
             filterVal = filterInput.value.trim();
-
 
           if (filterInput.value.trim().match(/^https?:\/\//)) {
             const urls = filterInput.value.trim().split(/\s+/);
@@ -1419,60 +1636,28 @@
             return;
           }
 
-
           btnFilter.disabled = true; setStatus('запуск...<br>0%', true);
           const rawLines = inEl.value.split(/\r?\n/).filter(Boolean), results = [];
 
           if (ipGeoToggle.checked) {
-            const seen = {};
-            for (let i = 0; i < rawLines.length; i++) {
-              const line = rawLines[i].trim();
-              let host;
-              try { host = new URL(line).hostname; }
-              catch { host = (line.match(/\/\/([^\/:]+)/) || [])[1] || line; }
-              if (!seen[host]) {
-                try {
-                  const res = await fetch(buildGeoUrl(host));
-                  const d = await res.json();
-                  const code = (d.country_code || d.countryCode || d.code || d.geoplugin_countryCode || d.country || '').toUpperCase();
-                  let name = d.country_name || d.countryName || d.geoplugin_countryName || d.country || host;
-                  if (code) {
-                    const isShort = name.length <= 3 || name.toUpperCase() === code;
-                    if (isShort) {
-                      const flag = countryCodeToFlag(code);
-                      const entry = countries.find(c => c.flag === flag);
-                      if (entry) name = entry.name;
-                    }
-                    seen[host] = `${countryCodeToFlag(code)} ${name}`;
-                  } else {
-                    seen[host] = host;
-                  }
-                } catch {
-                  seen[host] = host;
-                }
-              }
-              results.push(`${line.split('#')[0]}#${seen[host]}`);
-              setStatus(`обработка...<br>${Math.round((i + 1) / rawLines.length * 100)}%`, true);
-            }
+            const labelled = await geoLabelLines(rawLines, (done, total, ok, bad) => {
+              setStatus(`гео… ${done}/${total}<br>✓ ${ok}&nbsp;&nbsp;✗ ${bad}`, true);
+            });
+            for (const l of labelled) results.push(l);
           } else {
 
             for (let i = 0; i < rawLines.length; i++) {
               const line = rawLines[i].trim();
-
-              // Декодирование vmess только через существующую функцию — НЕ выполняем decodeURIComponent на всём URL,
-              // чтобы не ломать записи с %-encoded частями (hysteria, host и т.д.).
 
               let decoded = line;
               if (line.startsWith('vmess://')) {
                 decoded = decodeVmessBase64(line);
               }
 
-              // Безопасная функция decodeURIComponent
               function decodeSafe(s) {
                 try { return decodeURIComponent(s); } catch { return s; }
               }
 
-              // Собираем варианты строк для поиска (оригинал, декодированный, encoded)
               const rawVariants = [line, decodeSafe(line), encodeURIComponent(line)].filter(Boolean);
               const decVariants = [decoded, decodeSafe(decoded), encodeURIComponent(decoded)].filter(Boolean);
 
@@ -1480,7 +1665,6 @@
               const termLower = term.toLowerCase();
               const termEnc = encodeURIComponent(term);
 
-              // Поиск текста: проверяем разные варианты (чтобы найти эмоджи и их %-кодировку)
               let okText = false;
               if (!term) okText = true;
               else {
@@ -1490,7 +1674,6 @@
                   || rawVariants.some(v => v.toString().includes(termEnc));
               }
 
-              // Фильтр по стране: значение 'OFF' означает выключен (как в старой логике)
               let okCountry = false;
               if (!selectedCountry || selectedCountry === 'OFF') okCountry = true;
               else {
@@ -1507,50 +1690,38 @@
             }
           }
 
-          outEl.value = results.join('\n');
+          const sortEl = document.getElementById('geoSortToggle');
+          const finalLines = (sortEl && sortEl.checked)
+            ? results.slice().sort(geoSortCompare)
+            : results;
+          outEl.value = finalLines.join('\n');
           setStatus('готово!', false);
           btnFilter.disabled = false;
         };
 
-
-
-
-        /**
-   * Возвращает значение из вложенного объекта по пути, или undefined.
-   */
         function getNested(obj, path) {
           return path.reduce((acc, key) =>
             (acc != null ? acc[key] : undefined)
             , obj);
         }
 
-        /**
-         * Собирает все стандартные параметры из settings/streamSettings/reality/grpc и т.п.
-         */
         function extractParams(baseObj, params) {
           const mapping = {
             encryption: ['settings', 'vnext', 0, 'users', 0, 'encryption'],
             flow: ['settings', 'vnext', 0, 'users', 0, 'flow'],
             security: ['streamSettings', 'security'],
-            // TLS
             allowInsecure: ['streamSettings', 'tlsSettings', 'allowInsecure'],
             alpn: ['streamSettings', 'tlsSettings', 'alpn'],
-            fp: ['streamSettings', 'tlsSettings', 'fingerprint'],
-            // Reality
             pbk: ['streamSettings', 'realitySettings', 'publicKey'],
             sid: ['streamSettings', 'realitySettings', 'shortId'],
             seed: ['streamSettings', 'kcpSettings', 'seed'],
-            // transport
             type: ['streamSettings', 'network'],
             host: ['streamSettings', 'wsSettings', 'headers', 'Host'],
             path: ['streamSettings', 'wsSettings', 'path'],
-            // GRPC
             serviceName: ['streamSettings', 'grpcSettings', 'serviceName'],
-            // Shadowsocks-only
             ota: ['settings', 'servers', 0, 'ota']
           };
 
-          // Общие сборщики
           for (const [key, path] of Object.entries(mapping)) {
             let v = getNested(baseObj, path);
             if (v != null && v !== '') {
@@ -1560,16 +1731,18 @@
             }
           }
 
-          // Дополнительный sni: сначала TLS, а если нет — Reality
           const tlsSni = getNested(baseObj, ['streamSettings', 'tlsSettings', 'serverName']);
           const relSni = getNested(baseObj, ['streamSettings', 'realitySettings', 'serverName']);
           if (tlsSni) params.set('sni', tlsSni);
           else if (relSni) params.set('sni', relSni);
+
+          setFp(params,
+            getNested(baseObj, ['streamSettings', 'tlsSettings', 'fingerprint']),
+            getNested(baseObj, ['streamSettings', 'realitySettings', 'fingerprint']));
+          const spx = getNested(baseObj, ['streamSettings', 'realitySettings', 'spiderX']);
+          if (spx) params.set('spx', spx);
         }
 
-        /**
-         * Обработчик «мусорного» VLESS
-         */
         function handleGarbageVless(obj, urls) {
           if (obj.b !== 'VLESS' || !obj.f || obj.f.protocol !== 'vless') return false;
           const bean = getNested(obj, ['f', 'settings', 'vnext', 0]);
@@ -1587,9 +1760,6 @@
           return true;
         }
 
-        /**
-        * Обработчик «мусорного» SHADOWSOCKS
-        */
         function handleGarbageShadowsocks(obj, urls) {
           if (obj.b !== 'SHADOWSOCKS' || !obj.f || !Array.isArray(obj.f.settings?.servers)) return false;
           const server = obj.f.settings.servers[0];
@@ -1633,10 +1803,6 @@
           return true;
         }
 
-        /**
-         * Обработчик простых/нестандартных Hysteria объектов
-         * Поддерживает топ-левел и вложенные формы, где поля: server/server_port/password/tls/type
-         */
         function handleSimpleHysteria(obj, urls) {
           if (!obj) return false;
           const type = (obj.type || obj.configType || '').toString().toLowerCase();
@@ -1650,22 +1816,18 @@
 
           const p = new URLSearchParams();
           if (obj.tls && typeof obj.tls === 'object') {
-            // insecure может быть булевым или числом/строкой
             if (obj.tls.insecure === true || obj.tls.insecure === 1 || obj.tls.insecure === '1') p.set('insecure', '1');
-            // иногда указывают enabled + insecure
             if ((obj.tls.enabled === true || obj.tls.enabled === 'true') && (obj.tls.insecure)) p.set('insecure', '1');
             if (obj.tls.server_name) p.set('sni', obj.tls.server_name);
             if (obj.tls.serverName) p.set('sni', obj.tls.serverName);
           } else {
-            // поддержка старых полей
             if (obj.insecure === true || obj.insecure === 1 || obj.insecure === '1') p.set('insecure', '1');
             if (obj.sni) p.set('sni', obj.sni);
           }
 
-          // тег (может быть base64)
           let tag = (obj.tag || obj.remarks || obj.title || obj.e || obj.name || '').toString();
           if (tag && /^[A-Za-z0-9+/=]+$/.test(tag)) {
-            try { tag = atob(tag); } catch (e) { /* not base64 — leave as is */ }
+            try { tag = atob(tag); } catch (e) { }
           }
           const encTag = tag ? encodeURIComponent(tag) : '';
 
@@ -1696,7 +1858,7 @@
               if (o.tls?.enabled) {
                 p.set('security', o.tls.reality?.enabled ? 'reality' : 'tls');
                 if (o.tls.server_name) p.set('sni', o.tls.server_name);
-                if (o.tls.utls?.fingerprint) p.set('fp', o.tls.utls.fingerprint);
+                setFp(p, o.tls.utls?.fingerprint, o.tls.fingerprint);
                 if (o.tls.reality?.enabled) {
                   p.set('pbk', o.tls.reality.public_key);
                   p.set('sid', o.tls.reality.short_id);
@@ -1745,7 +1907,6 @@
             if (handleSingBoxOutbounds(obj, urls)) return;
             if (handleGarbageVless(obj, urls)) return;
 
-            // НОВЫЙ: обрабатываем простые/нестандартные hysteria JSON сразу
             if (handleSimpleHysteria(obj, urls)) return;
 
             if (handleGarbageShadowsocks(obj, urls)) return;
@@ -1785,7 +1946,7 @@
               p.set('allowInsecure', obj.insecure ? '1' : '0');
               p.set('type', obj.network || '');
               if (obj.sni) p.set('sni', obj.sni);
-              if (obj.fingerPrint) p.set('fp', obj.fingerPrint);
+              setFp(p, obj.fingerPrint, obj.fingerprint, obj.fp);
               if (obj.publicKey) p.set('pbk', obj.publicKey);
               if (obj.shortId) p.set('sid', obj.shortId);
               if (obj.serviceName) p.set('serviceName', obj.serviceName);
@@ -1793,7 +1954,6 @@
               urls.push(`vless://${obj.password}@${obj.server}:${obj.serverPort}?${p.toString()}#${t}`);
               return;
             }
-            // Обрабатываем outbounds: сначала проверяем на простой hysteria, иначе вызываем buildURLFromOutbound
             (obj.outbounds || obj.fullConfig?.outbounds || []).forEach(o => {
               if (!handleSimpleHysteria(o, urls)) {
                 buildURLFromOutbound(o, obj.remarks, urls);
@@ -1815,7 +1975,6 @@
                 const tag = hash ? decodeURIComponent(hash) : '';
                 const [auth, hp] = main.split('@');
                 const [method, password] = atob(auth).split(':');
-                // Обрезаем всё после ? перед разбором адреса и порта
                 const hostport = hp.split('?')[0];
                 const [address, portStr] = hostport.split(':');
                 const port = +portStr;
@@ -1876,10 +2035,10 @@
                   tlsSettings: {
                     serverName: p.get('sni') || '',
                     allowInsecure: p.get('allowInsecure') === '1',
-                    fingerprint: p.get('fp') || '',
+                    fingerprint: normalizeFp(p.get('fp')),
                     alpn: p.get('alpn') ? p.get('alpn').split(',') : []
                   },
-                  realitySettings: { publicKey: p.get('pbk') || '', shortId: p.get('sid') || '', serverName: p.get('sni') || '' },
+                  realitySettings: { publicKey: p.get('pbk') || '', shortId: p.get('sid') || '', serverName: p.get('sni') || '', fingerprint: normalizeFp(p.get('fp')), spiderX: p.get('spx') || '' },
                   kcpSettings: { seed: seed },
                   grpcSettings: { serviceName: serviceName },
                   tcpSettings: headerType === 'http' ? { header: { type: 'http', request: { headers: { Host: [h] }, path: [path] } } } : undefined,
@@ -1975,9 +2134,6 @@
           outEl.value = lines.map(l => l.replace(regex, replacement)).join('\n');
         }
 
-
-        // … ваш остальной код …
-
         document.getElementById('btnReplaceWsHost').addEventListener('click', () => {
           const newHost = document.getElementById('replaceWsHostInput').value.trim();
           const lines = inEl.value.trim().split(/\r?\n/);
@@ -2012,14 +2168,11 @@
           btnFilter.click();
         });
 
-
         document.getElementById('btnReplaceName').addEventListener('click', () => {
-          // НЕ тримим newName — сохраняем любые ведущие/хвостовые пробелы и любые символы
           const newNameRaw = document.getElementById('replaceNameInput').value;
           const prepend = document.getElementById('prependName').checked;
           const append = document.getElementById('appendName').checked;
 
-          // Берём исходный текст, НО НЕ меняем inEl.value
           const lines = inEl.value.split(/\r?\n/);
 
           const updated = lines.map(l => {
@@ -2031,29 +2184,24 @@
               if (prepend || append) {
                 if (prepend && append) combined = newNameRaw + existing + newNameRaw;
                 else if (prepend) combined = newNameRaw + existing;
-                else /* append */ combined = existing + newNameRaw;
+                else combined = existing + newNameRaw;
               } else {
-                // если ничего не отмечено — поведение "как раньше": полная замена
                 combined = newNameRaw;
               }
 
-              // Устанавливаем хэш — кодируем через encodeURIComponent, чтобы любые символы были безопасны в URL
               if (combined !== undefined && combined !== null) {
-                if (combined === '') u.hash = '';        // пустой — убрать хэш
+                if (combined === '') u.hash = '';
                 else u.hash = `#${encodeURIComponent(combined)}`;
               }
 
               return u.toString();
             } catch (e) {
-              // не URL — возвращаем строку без изменений (мы не меняем исходник)
               return l;
             }
           });
 
-          // Запись ТОЛЬКО в окно результата
           outEl.value = updated.join('\n');
 
-          // Закрываем модалку, НЕ трогаем inEl и НЕ запускаем btnFilter
           settingsModalLocal.style.display = 'none';
         });
 
@@ -2099,19 +2247,14 @@
             settingsModalLocal.style.display = 'none';
           });
 
-          // Надёжно включаем ipSni handler — удаляем старые слушатели, добавляем новый
           (function () {
-            // если кнопки нет — ничего не делаем
             const oldBtn = document.getElementById('ipSniToggle');
             if (!oldBtn) return;
 
-            // Убираем все предыдущие слушатели на случай, если они где-то были добавлены
             const newBtn = oldBtn.cloneNode(true);
             oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
-            // Теперь новый элемент без слушателей — добавляем корректный обработчик
             newBtn.addEventListener('click', () => {
-              // Берём исходный текст, НЕ меняем inEl
               const lines = inEl.value.split(/\r?\n/);
 
               const updated = lines.map(l => {
@@ -2120,27 +2263,22 @@
                   const p = new URLSearchParams(u.search);
 
                   const rawSni = p.get('sni');
-                  if (!rawSni) return l; // если sni нет — не меняем строку
+                  if (!rawSni) return l;
 
-                  // Декодируем sni (на случай %-encoding)
                   let decodedSni;
                   try { decodedSni = decodeURIComponent(rawSni); } catch { decodedSni = rawSni; }
 
                   const oldHost = u.hostname;
-                  // Если decodedSni содержит порт (например example.com:443), корректно распарсим
                   const m = decodedSni.match(/^(.+):(\d+)$/);
                   if (m) {
                     u.hostname = m[1];
                     u.port = m[2];
                   } else {
                     u.hostname = decodedSni;
-                    // порт оставляем прежним (u.port не трогаем)
                   }
 
-                  // Записываем старый host в sni (как строку)
                   p.set('sni', oldHost);
 
-                  // Сохраняем все остальные параметры
                   u.search = p.toString() ? `?${p.toString()}` : '';
 
                   return u.toString();
@@ -2149,17 +2287,14 @@
                 }
               });
 
-              // Пишем ТОЛЬКО в окно результата
               outEl.value = updated.join('\n');
 
-              // Закрываем модалку
               settingsModalLocal.style.display = 'none';
             });
           })();
 
         })();
 
-        // дедупликация
         document.getElementById('btnDedup').addEventListener('click', () => {
           const raw = inEl.value.trim();
           let output = '';
@@ -2204,18 +2339,15 @@
           return `ss://${b64}@${o.server}:${o.serverPort}#${encodeURIComponent(o.remarks || '')}`;
         }
 
-
         (function () {
           const btn = document.getElementById('btnConvert');
-          const orig = btn.onclick;          // базовый JSON→URL
+          const orig = btn.onclick;
 
           btn.onclick = async function (...args) {
-            // 1) базовая конвертация
             await orig.apply(this, args);
 
             const raw = inEl.value;
 
-            // 2) NEW JSON BUILDER: \u0002 -> ss://
             const partsSS = raw.split(/\u0002+/);
             const urlsSS = [];
             for (let p of partsSS) {
@@ -2232,7 +2364,6 @@
               outEl.value += (outEl.value ? '\n' : '') + urlsSS.join('\n');
             }
 
-            // 3) “мусорные” VLESS/TROJAN JSON
             const partsJT = raw.split(/\u0002+|\r?\n/);
             const urlsJT = [];
             for (let p of partsJT) {
@@ -2278,7 +2409,6 @@
           };
         })();
 
-
         (function () {
           const btn = document.getElementById('btnConvert');
           const orig2 = btn.onclick;
@@ -2300,20 +2430,12 @@
           };
         })();
 
-        // ── ulink://install/?content=BASE64&format=json support ──
         (function () {
-          /**
-           * Декодирует base64url/base64 строку с padding-толерантностью.
-           * content-параметр может содержать base64url ('-' вместо '+', '_' вместо '/')
-           * а также %3D%3D вместо == — URL уже раскодирован через searchParams.get().
-           */
           function safeAtob(s) {
             try {
-              // base64url → base64 (заменяем - и _, восстанавливаем padding)
               const padded = s.replace(/-/g, '+').replace(/_/g, '/');
               const rem = padded.length % 4;
               const fixed = rem ? padded + '===='.slice(rem) : padded;
-              // atob даёт бинарную строку (latin1), конвертируем в настоящий UTF-8
               const bin = atob(fixed);
               const bytes = new Uint8Array(bin.length);
               for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -2321,15 +2443,8 @@
             } catch { return null; }
           }
 
-          // Маппинг fingerprint sing-box → xray/v2ray.
-          // sing-box поддерживает 'qq' (QQ Browser), но многие клиенты его не знают.
-          const FP_MAP = { qq: 'chrome', randomized: 'random' };
-          function normFp(fp) { return FP_MAP[fp] || fp || ''; }
+          function normFp(fp) { return normalizeFp(fp); }
 
-          /**
-           * Конвертирует один sing-box outbound объект в URI-строку.
-           * tag передаётся отдельно (приоритет: hash URL > o.tag).
-           */
           function singBoxOutboundToURI(o, tag) {
             if (!o || !o.type) return null;
             const encTag = encodeURIComponent(tag || o.tag || '');
@@ -2394,19 +2509,12 @@
             return null;
           }
 
-          /**
-           * Парсит ulink://install/?content=BASE64&format=json#TAG
-           * Возвращает массив URI или [].
-           */
           function parseUlink(line) {
             if (!line.startsWith('ulink://')) return null;
             try {
-              // ulink:// — нестандартная схема, заменяем для парсинга
               const u = new URL(line.replace(/^ulink:\/\//, 'https://ulink-dummy/'));
               const contentParam = u.searchParams.get('content');
 
-              // u.hash.slice(1) возвращает fragment как percent-encoded строку (%F0%9F%87%B8...).
-              // Декодируем в Unicode для передачи в singBoxOutboundToURI (там encodeURIComponent сделает правильное кодирование).
               const hashRaw = u.hash ? u.hash.slice(1) : '';
               let hashTag = '';
               if (hashRaw) {
@@ -2427,7 +2535,6 @@
 
               const uris = [];
               outbounds.forEach(o => {
-                // hash-тег приоритетнее o.tag: задаётся автором ссылки, всегда корректен
                 const tag = hashTag || o.tag || '';
                 const uri = singBoxOutboundToURI(o, tag);
                 if (uri) uris.push(uri);
@@ -2458,9 +2565,7 @@
         })();
       });
 
-
-
-    </script>
+</script>
 </body>
 
 </html>
